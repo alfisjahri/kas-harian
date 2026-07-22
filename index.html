@@ -20,6 +20,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS Client via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- PapaParse Library via CDN (Untuk Baca File CSV dari Google Sheets) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-16">
 
@@ -69,6 +71,19 @@
           <span class="text-xs text-rose-600 font-medium">Pengeluaran</span>
           <p id="stat-pengeluaran" class="text-lg font-bold text-rose-700">Rp 0</p>
         </div>
+      </div>
+    </section>
+
+    <!-- Import Google Sheets (CSV) Section -->
+    <section id="import-section" class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl shadow space-y-2">
+      <h2 class="font-bold text-indigo-900 text-sm flex items-center gap-1">📊 Import Data Google Sheets (.csv)</h2>
+      <p class="text-xs text-indigo-700">Download Google Sheets kamu sebagai file .CSV, lalu upload di sini:</p>
+      
+      <div class="flex gap-2 items-center pt-1">
+        <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+        <button id="btn-import-csv" type="button" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-indigo-700 shadow">
+          Upload
+        </button>
       </div>
     </section>
 
@@ -141,16 +156,14 @@
     </div>
   </div>
 
-  <!-- SINGLE SCRIPT (TIDAK ADA VARIABEL SUPABASE TERTUMPUK) -->
+  <!-- SINGLE SCRIPT -->
   <script>
     // --- KONFIGURASI SUPABASE ---
     const SUPABASE_URL = "https://sgxztlpxabehtnemksvr.supabase.co"; 
     const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e";
 
-    // Inisialisasi Supabase Client (Cukup 1x di sini)
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Data Dummy
     let dummyTransactions = [
       { id: '1', date: new Date().toISOString().split('T')[0], type: 'pemasukan', amount: 500000, description: 'Gaji Freelance (Demo)' },
       { id: '2', date: new Date().toISOString().split('T')[0], type: 'pengeluaran', amount: 25000, description: 'Kopi & Snack (Demo)' }
@@ -175,8 +188,7 @@
         type: "image/png"
       }]
     };
-    const blob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
-    document.getElementById('manifest-placeholder').setAttribute('href', URL.createObjectURL(blob));
+    document.getElementById('manifest-placeholder').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifestData)], {type: 'application/json'})));
 
     if ('serviceWorker' in navigator) {
       const swCode = `
@@ -196,6 +208,7 @@
       document.getElementById('btn-logout').addEventListener('click', handleLogout);
       document.getElementById('btn-cancel-edit').addEventListener('click', resetForm);
       document.getElementById('filter-period').addEventListener('change', renderApp);
+      document.getElementById('btn-import-csv').addEventListener('click', handleImportCSV);
 
       document.getElementById('tx-form').addEventListener('submit', handleSaveTx);
       document.getElementById('auth-form').addEventListener('submit', handleAuth);
@@ -210,13 +223,8 @@
       });
     });
 
-    function openModal() {
-      document.getElementById('auth-modal').classList.remove('hidden');
-    }
-
-    function closeModal() {
-      document.getElementById('auth-modal').classList.add('hidden');
-    }
+    function openModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('auth-modal').classList.add('hidden'); }
 
     function updateUIForAuth() {
       const statusEl = document.getElementById('user-status');
@@ -298,6 +306,68 @@
           </div>
         `;
         listContainer.appendChild(card);
+      });
+    }
+
+    // --- FITUR IMPORT CSV GOOGLE SHEETS ---
+    function handleImportCSV() {
+      if (!currentUser) {
+        alert("Harap login dulu sebagai pemilik untuk bisa mengimpor data!");
+        return;
+      }
+
+      const fileInput = document.getElementById('csv-file-input');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert("Pilih file .csv dari Google Sheets kamu terlebih dahulu!");
+        return;
+      }
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async function(results) {
+          const rows = results.data;
+          let newRecords = [];
+
+          rows.forEach(row => {
+            // Ambil nama kolom secara fleksibel
+            const date = row['Tanggal'] || row['tanggal'] || row['date'] || row['Date'];
+            const typeRaw = row['Tipe'] || row['tipe'] || row['type'] || row['Type'] || 'pengeluaran';
+            const amountRaw = row['Nominal'] || row['nominal'] || row['amount'] || row['Amount'];
+            const desc = row['Keterangan'] || row['keterangan'] || row['description'] || row['Description'] || 'Import CSV';
+
+            if (date && amountRaw) {
+              const amount = Number(amountRaw.toString().replace(/[^0-9]/g, ''));
+              const type = typeRaw.toString().toLowerCase().includes('masuk') ? 'pemasukan' : 'pengeluaran';
+
+              newRecords.push({
+                user_id: currentUser.id,
+                date: date.trim(),
+                type: type,
+                amount: amount,
+                description: desc.trim()
+              });
+            }
+          });
+
+          if (newRecords.length === 0) {
+            alert("Gagal membaca data! Pastikan nama header kolom di spreadsheet kamu: Tanggal, Tipe, Nominal, Keterangan.");
+            return;
+          }
+
+          // Upload batch ke Supabase
+          const { error } = await supabaseClient.from('transactions').insert(newRecords);
+
+          if (error) {
+            alert("Error saat impor ke Supabase: " + error.message);
+          } else {
+            alert(`Berhasil mengimpor ${newRecords.length} catatan transaksi dari Google Sheets!`);
+            fileInput.value = '';
+            renderApp();
+          }
+        }
       });
     }
 

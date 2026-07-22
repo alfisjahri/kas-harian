@@ -129,11 +129,11 @@
     </div>
   </div>
 
-  <!-- JavaScript Logic -->
+  <!-- JavaScript Logic Terupdate -->
   <script>
     // --- KONFIGURASI SUPABASE ---
     const SUPABASE_URL = "https://sgxztlpxabehtnemksvr.supabase.co"; 
-    const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e"; // Pakai Publishable Key
+    const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e"; 
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -152,7 +152,7 @@
     const manifestData = {
       name: "CatatDuit Privat",
       short_name: "CatatDuit",
-      start_url: "./",
+      start_: "./",
       display: "standalone",
       background_color: "#f3f4f6",
       theme_color: "#4f46e5",
@@ -167,7 +167,6 @@
     const manifestURL = URL.createObjectURL(blob);
     document.getElementById('manifest-placeholder').setAttribute('href', manifestURL);
 
-    // Register Service Worker dasar untuk PWA
     if ('serviceWorker' in navigator) {
       const swCode = `
         self.addEventListener('install', (e) => self.skipWaiting());
@@ -181,10 +180,12 @@
     window.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('tx-date').valueAsDate = new Date();
       
+      // Cek apakah user sudah punya sesi aktif sebelumnya
       const { data: { user } } = await supabase.auth.getUser();
       currentUser = user;
       updateUIForAuth();
 
+      // Listener perubahan status auth (login/logout)
       supabase.auth.onAuthStateChange((_event, session) => {
         currentUser = session?.user || null;
         updateUIForAuth();
@@ -215,14 +216,16 @@
       let transactions = [];
 
       if (currentUser) {
+        // Ambil data asli dari Supabase jika user aktif
         const { data, error } = await supabase
           .from('transactions')
           .select('*')
           .order('date', { ascending: false });
 
-        if (!error) realTransactions = data;
+        if (!error && data) realTransactions = data;
         transactions = realTransactions;
       } else {
+        // Pakai data dummy jika belum login
         transactions = dummyTransactions;
       }
 
@@ -338,19 +341,20 @@
       document.getElementById('btn-cancel-edit').classList.add('hidden');
     }
 
-    // --- AUTHENTICATION PRIVAT (MAKSIMAL 3X PERCOBAAN) ---
+    // --- AUTHENTICATION PERBAIKAN ---
     async function handleAuth(e) {
-      e.preventDefault();
+      e.preventDefault(); // Mencegah reload halaman bawaan form browser
 
       if (isLocked) {
         alert("Terlalu banyak percobaan gagal! Kunci dibuka kembali dalam 30 detik.");
         return;
       }
 
-      const email = document.getElementById('auth-email').value;
+      const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value;
 
-      let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      // Panggil Auth Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
         loginAttempts++;
@@ -358,7 +362,7 @@
 
         if (loginAttempts >= 3) {
           isLocked = true;
-          alert("Gagal 3 kali! Login dikunci selama 30 detik untuk pencegahan bot.");
+          alert("Gagal 3 kali! Akses login dikunci selama 30 detik.");
           setTimeout(() => {
             isLocked = false;
             loginAttempts = 0;
@@ -366,21 +370,32 @@
           return;
         }
 
-        alert(`Gagal login: Password/Email salah. Sisa percobaan: ${sisa}`);
+        alert(`Gagal login: ${error.message}\nSisa percobaan: ${sisa}`);
         return;
       }
 
-      // Login sukses
+      // Jika Berhasil
       loginAttempts = 0;
+      currentUser = data.user;
+      alert("Berhasil login sebagai Pemilik!");
       closeAuthModal();
+      updateUIForAuth(); // Update UI langsung
     }
 
     async function handleLogout() {
       await supabase.auth.signOut();
+      currentUser = null;
+      updateUIForAuth();
+      alert("Berhasil logout!");
     }
 
-    function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
-    function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
+    function openAuthModal() { 
+      document.getElementById('auth-modal').classList.remove('hidden'); 
+    }
+    
+    function closeAuthModal() { 
+      document.getElementById('auth-modal').classList.add('hidden'); 
+    }
 
     // --- UTILS ---
     function formatRp(num) {

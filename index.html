@@ -20,7 +20,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS Client via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- PapaParse Library via CDN (Untuk Baca File CSV Google Sheets) -->
+  <!-- PapaParse Library via CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-16">
@@ -51,15 +51,63 @@
       </button>
     </div>
 
-    <!-- Ringkasan Keuangan -->
+    <!-- Ringkasan Keuangan & Panel Filter Advance -->
     <section class="bg-white p-4 rounded-xl shadow space-y-3">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h2 class="font-bold text-gray-700">Ringkasan</h2>
-        <select id="filter-period" class="text-xs bg-gray-100 p-1.5 rounded-md font-semibold border border-gray-300">
-          <option value="today">Hari Ini</option>
-          <option value="week">Minggu Ini</option>
-          <option value="month">Bulan Ini</option>
-        </select>
+      <div class="space-y-2 border-b pb-3">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold text-gray-700">Ringkasan</h2>
+          <select id="filter-type" class="text-xs bg-gray-100 p-1.5 rounded-md font-semibold border border-gray-300">
+            <option value="month" selected>Per Bulan</option>
+            <option value="quarter">Per Kuartal (Q1 - Q4)</option>
+            <option value="semester">Per Semester (6 Bulan)</option>
+            <option value="year">Per Tahun</option>
+          </select>
+        </div>
+
+        <!-- Opsi Filter Ditingkatkan (Dynamic UI) -->
+        <div id="filter-controls" class="space-y-2 pt-1">
+          
+          <!-- Mode Per Bulan -->
+          <div id="ctrl-month" class="flex flex-wrap gap-2 items-center justify-between">
+            <input type="month" id="picker-month" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50">
+            <select id="picker-submonth" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1">
+              <option value="all" selected>Full 1 Bulan Ini</option>
+              <option value="w1">Minggu ke-1 (Tgl 1-7)</option>
+              <option value="w2">Minggu ke-2 (Tgl 8-14)</option>
+              <option value="w3">Minggu ke-3 (Tgl 15-21)</option>
+              <option value="w4">Minggu ke-4 (Tgl 22-End)</option>
+              <option value="custom_day">Pilih Tanggal Spesifik...</option>
+            </select>
+            <input type="date" id="picker-specific-day" class="hidden text-xs p-1.5 border rounded-md font-semibold bg-gray-50 w-full">
+          </div>
+
+          <!-- Mode Kuartal -->
+          <div id="ctrl-quarter" class="hidden flex gap-2 items-center justify-between">
+            <select id="picker-quarter-year" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1"></select>
+            <select id="picker-quarter-q" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1">
+              <option value="q1">Kuartal 1 (Jan - Mar)</option>
+              <option value="q2">Kuartal 2 (Apr - Jun)</option>
+              <option value="q3">Kuartal 3 (Jul - Sep)</option>
+              <option value="q4">Kuartal 4 (Okt - Des)</option>
+            </select>
+          </div>
+
+          <!-- Mode Semester -->
+          <div id="ctrl-semester" class="hidden flex gap-2 items-center justify-between">
+            <select id="picker-semester-year" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1"></select>
+            <select id="picker-semester-s" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1">
+              <option value="s1">Semester 1 (Jan - Jun)</option>
+              <option value="s2">Semester 2 (Jul - Des)</option>
+            </select>
+          </div>
+
+          <!-- Mode Tahun -->
+          <div id="ctrl-year" class="hidden flex gap-2 items-center justify-between">
+            <label class="text-xs font-medium text-gray-500">Tahun:</label>
+            <select id="picker-year-only" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1"></select>
+          </div>
+
+        </div>
       </div>
 
       <div class="grid grid-cols-2 gap-2 text-center">
@@ -156,7 +204,7 @@
     </div>
   </div>
 
-  <!-- SINGLE SCRIPT (CLEAN & AKURAT) -->
+  <!-- SINGLE SCRIPT (ADVANCE FILTERING) -->
   <script>
     // --- KONFIGURASI SUPABASE ---
     const SUPABASE_URL = "https://sgxztlpxabehtnemksvr.supabase.co"; 
@@ -198,16 +246,46 @@
       navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], {type: 'application/javascript'}))).catch(() => {});
     }
 
-    // --- EVENT LISTENERS ---
+    // --- INITIALIZATION & EVENT LISTENERS ---
     window.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('tx-date').valueAsDate = new Date();
+
+      // Populate Dropdown Tahun
+      const currentYear = new Date().getFullYear();
+      const yearSelectors = ['picker-quarter-year', 'picker-semester-year', 'picker-year-only'];
+      yearSelectors.forEach(id => {
+        const el = document.getElementById(id);
+        el.innerHTML = '';
+        for (let y = currentYear; y >= currentYear - 5; y--) {
+          el.innerHTML += `<option value="${y}">${y}</option>`;
+        }
+      });
+
+      // Default set picker month ke Bulan Ini
+      const today = new Date();
+      const currentYM = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+      document.getElementById('picker-month').value = currentYM;
+
+      // Event Listeners UI Toggle Filter
+      document.getElementById('filter-type').addEventListener('change', handleFilterTypeChange);
+      document.getElementById('picker-submonth').addEventListener('change', (e) => {
+        const dayPicker = document.getElementById('picker-specific-day');
+        if (e.target.value === 'custom_day') dayPicker.classList.remove('hidden');
+        else dayPicker.classList.add('hidden');
+        renderApp();
+      });
+
+      // Trigger Render on Change
+      ['picker-month', 'picker-specific-day', 'picker-quarter-year', 'picker-quarter-q', 
+       'picker-semester-year', 'picker-semester-s', 'picker-year-only'].forEach(id => {
+        document.getElementById(id).addEventListener('change', renderApp);
+      });
 
       document.getElementById('btn-login-trigger').addEventListener('click', openModal);
       document.getElementById('btn-login-banner').addEventListener('click', openModal);
       document.getElementById('btn-close-modal').addEventListener('click', closeModal);
       document.getElementById('btn-logout').addEventListener('click', handleLogout);
       document.getElementById('btn-cancel-edit').addEventListener('click', resetForm);
-      document.getElementById('filter-period').addEventListener('change', renderApp);
       document.getElementById('btn-import-csv').addEventListener('click', handleImportCSV);
 
       document.getElementById('tx-form').addEventListener('submit', handleSaveTx);
@@ -222,6 +300,15 @@
         updateUIForAuth();
       });
     });
+
+    function handleFilterTypeChange(e) {
+      const type = e.target.value;
+      document.getElementById('ctrl-month').classList.toggle('hidden', type !== 'month');
+      document.getElementById('ctrl-quarter').classList.toggle('hidden', type !== 'quarter');
+      document.getElementById('ctrl-semester').classList.toggle('hidden', type !== 'semester');
+      document.getElementById('ctrl-year').classList.toggle('hidden', type !== 'year');
+      renderApp();
+    }
 
     function openModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
     function closeModal() { document.getElementById('auth-modal').classList.add('hidden'); }
@@ -248,7 +335,7 @@
       renderApp();
     }
 
-    // --- RENDER & CRUD ---
+    // --- RENDER & LOGIKA FILTERING CANGGIH ---
     async function renderApp() {
       let transactions = [];
 
@@ -264,8 +351,7 @@
         transactions = dummyTransactions;
       }
 
-      const period = document.getElementById('filter-period').value;
-      const filtered = filterByPeriod(transactions, period);
+      const filtered = getFilteredData(transactions);
 
       let totalMasuk = 0;
       let totalKeluar = 0;
@@ -309,7 +395,63 @@
       });
     }
 
-    // --- IMPORT CSV GOOGLE SHEETS (LOGIKA DIBERSIHKAN TOTAL) ---
+    function getFilteredData(data) {
+      const mode = document.getElementById('filter-type').value;
+
+      return data.filter(t => {
+        const tDate = new Date(t.date);
+        const year = tDate.getFullYear();
+        const month = tDate.getMonth() + 1; // 1-12
+        const dateNum = tDate.getDate();
+
+        if (mode === 'month') {
+          const ymVal = document.getElementById('picker-month').value; // YYYY-MM
+          if (!ymVal) return true;
+          const [targetY, targetM] = ymVal.split('-').map(Number);
+
+          // Cek kesesuaian Bulan & Tahun
+          if (year !== targetY || month !== targetM) return false;
+
+          // Cek Sub-filter (Mingguan / Harian)
+          const sub = document.getElementById('picker-submonth').value;
+          if (sub === 'w1') return dateNum >= 1 && dateNum <= 7;
+          if (sub === 'w2') return dateNum >= 8 && dateNum <= 14;
+          if (sub === 'w3') return dateNum >= 15 && dateNum <= 21;
+          if (sub === 'w4') return dateNum >= 22;
+          if (sub === 'custom_day') {
+            const dayVal = document.getElementById('picker-specific-day').value;
+            return dayVal ? t.date === dayVal : true;
+          }
+          return true; // Full 1 Bulan
+
+        } else if (mode === 'quarter') {
+          const qYear = Number(document.getElementById('picker-quarter-year').value);
+          const qVal = document.getElementById('picker-quarter-q').value;
+          if (year !== qYear) return false;
+
+          if (qVal === 'q1') return month >= 1 && month <= 3;
+          if (qVal === 'q2') return month >= 4 && month <= 6;
+          if (qVal === 'q3') return month >= 7 && month <= 9;
+          if (qVal === 'q4') return month >= 10 && month <= 12;
+
+        } else if (mode === 'semester') {
+          const sYear = Number(document.getElementById('picker-semester-year').value);
+          const sVal = document.getElementById('picker-semester-s').value;
+          if (year !== sYear) return false;
+
+          if (sVal === 's1') return month >= 1 && month <= 6;
+          if (sVal === 's2') return month >= 7 && month <= 12;
+
+        } else if (mode === 'year') {
+          const yVal = Number(document.getElementById('picker-year-only').value);
+          return year === yVal;
+        }
+
+        return true;
+      });
+    }
+
+    // --- IMPORT CSV GOOGLE SHEETS ---
     function handleImportCSV() {
       if (!currentUser) {
         alert("Harap login dulu sebagai pemilik untuk bisa mengimpor data!");
@@ -328,7 +470,6 @@
         header: true,
         skipEmptyLines: true,
         transformHeader: function(h) {
-          // Bersihkan header dari spasi & BOM character
           return h.replace(/^\ufeff/, '').trim().toLowerCase();
         },
         complete: async function(results) {
@@ -338,7 +479,6 @@
           rows.forEach((row) => {
             const keys = Object.keys(row);
             
-            // Cari nama kolom dinamis
             const dateKey = keys.find(k => k.includes('tanggal') || k.includes('date'));
             const typeKey = keys.find(k => k.includes('tipe') || k.includes('type') || k.includes('jenis'));
             const amountKey = keys.find(k => k.includes('nominal') || k.includes('amount') || k.includes('jumlah'));
@@ -350,10 +490,8 @@
             const desc = descKey && row[descKey] ? row[descKey] : 'Import CSV';
 
             if (rawDate && rawAmount) {
-              // 1. Bersihkan Angka Nominal
               const amount = Number(rawAmount.toString().replace(/[^0-9]/g, ''));
 
-              // 2. Deteksi Tipe (Pemasukan vs Pengeluaran)
               const typeStr = rawType.toString().trim().toLowerCase();
               const isPemasukan = 
                 typeStr.includes('masuk') || 
@@ -367,7 +505,6 @@
 
               const finalType = isPemasukan ? 'pemasukan' : 'pengeluaran';
 
-              // 3. Format Tanggal ke YYYY-MM-DD
               let formattedDate = rawDate.toString().trim();
               if (formattedDate.includes('/')) {
                 const parts = formattedDate.split('/');
@@ -396,13 +533,12 @@
             return;
           }
 
-          // Kirim ke Supabase
           const { error } = await supabaseClient.from('transactions').insert(newRecords);
 
           if (error) {
             alert("Error Supabase: " + error.message);
           } else {
-            alert(`Selesai! ${newRecords.length} transaksi berhasil diimpor. Pemasukan & Pengeluaran sudah pas!`);
+            alert(`Selesai! ${newRecords.length} transaksi berhasil diimpor.`);
             fileInput.value = '';
             renderApp();
           }
@@ -525,25 +661,6 @@
     // --- UTILS ---
     function formatRp(num) {
       return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
-    }
-
-    function filterByPeriod(data, period) {
-      const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
-
-      return data.filter(t => {
-        const tDate = new Date(t.date);
-        if (period === 'today') {
-          return t.date === todayStr;
-        } else if (period === 'week') {
-          const oneWeekAgo = new Date();
-          oneWeekAgo.setDate(now.getDate() - 7);
-          return tDate >= oneWeekAgo && tDate <= now;
-        } else if (period === 'month') {
-          return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
-        }
-        return true;
-      });
     }
   </script>
 </body>

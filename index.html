@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="CatatDuit">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2953/2953361.png">
 
-  <!-- Dynamic PWA Manifest via Data URI (Tanpa butuh file JSON terpisah) -->
+  <!-- Dynamic PWA Manifest -->
   <link rel="manifest" id="manifest-placeholder">
 
   <!-- Tailwind CSS via CDN -->
@@ -21,7 +21,7 @@
   <!-- Supabase JS Client via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-12 select-none">
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-16">
 
   <!-- Header & Mode Banner -->
   <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
@@ -30,18 +30,31 @@
       <p id="user-status" class="text-xs text-indigo-200">Mode Demo (Data tidak tersimpan)</p>
     </div>
     <div id="auth-btn-container">
-      <button id="btn-login-modal" onclick="openAuthModal()" class="bg-white text-indigo-600 px-3 py-1 rounded-lg text-sm font-semibold shadow hover:bg-indigo-50">Login</button>
-      <button id="btn-logout" onclick="handleLogout()" class="hidden bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600">Logout</button>
+      <!-- Tombol Header Tanpa inline onclick (Pakai EventListener) -->
+      <button id="btn-login-trigger" type="button" class="bg-white text-indigo-600 px-3 py-1.5 rounded-lg text-sm font-semibold shadow hover:bg-indigo-50 active:scale-95 transition">
+        Login
+      </button>
+      <button id="btn-logout" type="button" class="hidden bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-600 transition">
+        Logout
+      </button>
     </div>
   </header>
 
   <main class="max-w-md mx-auto p-4 space-y-4">
 
+    <!-- Banner Demo Alert (Khusus jika belum login) -->
+    <div id="demo-banner" class="bg-amber-50 border border-amber-200 p-3 rounded-xl flex justify-between items-center text-xs text-amber-800">
+      <span>Kamu berada di mode demo pratinjau.</span>
+      <button id="btn-login-banner" type="button" class="font-bold underline text-indigo-600 hover:text-indigo-800">
+        Klik Login
+      </button>
+    </div>
+
     <!-- Ringkasan Keuangan -->
     <section class="bg-white p-4 rounded-xl shadow space-y-3">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="font-bold text-gray-700">Ringkasan</h2>
-        <select id="filter-period" onchange="renderApp()" class="text-xs bg-gray-100 p-1.5 rounded-md font-semibold border border-gray-300">
+        <select id="filter-period" class="text-xs bg-gray-100 p-1.5 rounded-md font-semibold border border-gray-300">
           <option value="today">Hari Ini</option>
           <option value="week">Minggu Ini</option>
           <option value="month">Bulan Ini</option>
@@ -63,7 +76,7 @@
     <!-- Form Input Transaksi -->
     <section class="bg-white p-4 rounded-xl shadow">
       <h2 id="form-title" class="font-bold text-gray-700 mb-3">Tambah Transaksi</h2>
-      <form id="tx-form" onsubmit="handleSaveTx(event)" class="space-y-3">
+      <form id="tx-form" class="space-y-3">
         <input type="hidden" id="tx-id">
 
         <div>
@@ -92,7 +105,7 @@
 
         <div class="flex gap-2">
           <button type="submit" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold text-sm hover:bg-indigo-700 transition">Simpan</button>
-          <button type="button" id="btn-cancel-edit" onclick="resetForm()" class="hidden bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold">Batal</button>
+          <button type="button" id="btn-cancel-edit" class="hidden bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold">Batal</button>
         </div>
       </form>
     </section>
@@ -108,13 +121,13 @@
   </main>
 
   <!-- Modal Login Privat -->
-  <div id="auth-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-6 rounded-xl w-full max-w-sm space-y-4 relative">
-      <button onclick="closeAuthModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">&times;</button>
+  <div id="auth-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white p-6 rounded-xl w-full max-w-sm space-y-4 relative shadow-2xl">
+      <button id="btn-close-modal" type="button" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
       <h2 class="text-lg font-bold text-gray-800 text-center">Login Pemilik</h2>
-      <p class="text-xs text-gray-400 text-center -mt-2">Khusus akun terdaftar di Supabase</p>
+      <p class="text-xs text-gray-400 text-center -mt-2">Masukkan akun terdaftar Supabase</p>
       
-      <form onsubmit="handleAuth(event)" class="space-y-3">
+      <form id="auth-form" class="space-y-3">
         <div>
           <label class="block text-xs text-gray-500 mb-1">Email Owner</label>
           <input type="email" id="auth-email" required class="w-full p-2 border rounded-lg text-sm">
@@ -124,20 +137,22 @@
           <input type="password" id="auth-password" required class="w-full p-2 border rounded-lg text-sm">
         </div>
 
-        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700">Masuk Aplikasi</button>
+        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
+          Masuk Aplikasi
+        </button>
       </form>
     </div>
   </div>
 
-  <!-- JavaScript Logic Terupdate -->
+  <!-- JavaScript Logic -->
   <script>
     // --- KONFIGURASI SUPABASE ---
     const SUPABASE_URL = "https://sgxztlpxabehtnemksvr.supabase.co"; 
-    const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e"; 
+    const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e";
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Dummy data untuk non-login user
+    // Data Dummy
     let dummyTransactions = [
       { id: '1', date: new Date().toISOString().split('T')[0], type: 'pemasukan', amount: 500000, description: 'Gaji Freelance (Demo)' },
       { id: '2', date: new Date().toISOString().split('T')[0], type: 'pengeluaran', amount: 25000, description: 'Kopi & Snack (Demo)' }
@@ -148,11 +163,11 @@
     let loginAttempts = 0;
     let isLocked = false;
 
-    // --- SETUP PWA MANIFEST (INLINE) ---
+    // --- PWA SETUP ---
     const manifestData = {
       name: "CatatDuit Privat",
       short_name: "CatatDuit",
-      start_: "./",
+      start_url: "./",
       display: "standalone",
       background_color: "#f3f4f6",
       theme_color: "#4f46e5",
@@ -162,61 +177,78 @@
         type: "image/png"
       }]
     };
-    const stringManifest = JSON.stringify(manifestData);
-    const blob = new Blob([stringManifest], {type: 'application/json'});
-    const manifestURL = URL.createObjectURL(blob);
-    document.getElementById('manifest-placeholder').setAttribute('href', manifestURL);
+    const blob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+    document.getElementById('manifest-placeholder').setAttribute('href', URL.createObjectURL(blob));
 
     if ('serviceWorker' in navigator) {
       const swCode = `
         self.addEventListener('install', (e) => self.skipWaiting());
         self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
       `;
-      const blobSW = new Blob([swCode], {type: 'application/javascript'});
-      navigator.serviceWorker.register(URL.createObjectURL(blobSW)).catch(() => {});
+      navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], {type: 'application/javascript'}))).catch(() => {});
     }
 
-    // --- INITIALIZATION ---
+    // --- EVENT LISTENERS (DIPASANG SECARA MURNI BERSIH) ---
     window.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('tx-date').valueAsDate = new Date();
-      
-      // Cek apakah user sudah punya sesi aktif sebelumnya
+
+      // Pasang Listener Tombol
+      document.getElementById('btn-login-trigger').addEventListener('click', openModal);
+      document.getElementById('btn-login-banner').addEventListener('click', openModal);
+      document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+      document.getElementById('btn-logout').addEventListener('click', handleLogout);
+      document.getElementById('btn-cancel-edit').addEventListener('click', resetForm);
+      document.getElementById('filter-period').addEventListener('change', renderApp);
+
+      document.getElementById('tx-form').addEventListener('submit', handleSaveTx);
+      document.getElementById('auth-form').addEventListener('submit', handleAuth);
+
+      // Cek Sesi User
       const { data: { user } } = await supabase.auth.getUser();
       currentUser = user;
       updateUIForAuth();
 
-      // Listener perubahan status auth (login/logout)
       supabase.auth.onAuthStateChange((_event, session) => {
         currentUser = session?.user || null;
         updateUIForAuth();
       });
     });
 
+    function openModal() {
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+    }
+
     function updateUIForAuth() {
       const statusEl = document.getElementById('user-status');
-      const loginBtn = document.getElementById('btn-login-modal');
+      const loginBtn = document.getElementById('btn-login-trigger');
       const logoutBtn = document.getElementById('btn-logout');
+      const demoBanner = document.getElementById('demo-banner');
 
       if (currentUser) {
         statusEl.innerText = `Pemilik: ${currentUser.email}`;
         statusEl.className = "text-xs text-emerald-200 font-medium";
         loginBtn.classList.add('hidden');
         logoutBtn.classList.remove('hidden');
+        demoBanner.classList.add('hidden');
       } else {
         statusEl.innerText = "Mode Demo (Khusus Pratinjau)";
         statusEl.className = "text-xs text-indigo-200";
         loginBtn.classList.remove('hidden');
         logoutBtn.classList.add('hidden');
+        demoBanner.classList.remove('hidden');
       }
       renderApp();
     }
 
-    // --- FETCH & RENDER ---
+    // --- RENDER & CRUD ---
     async function renderApp() {
       let transactions = [];
 
       if (currentUser) {
-        // Ambil data asli dari Supabase jika user aktif
         const { data, error } = await supabase
           .from('transactions')
           .select('*')
@@ -225,7 +257,6 @@
         if (!error && data) realTransactions = data;
         transactions = realTransactions;
       } else {
-        // Pakai data dummy jika belum login
         transactions = dummyTransactions;
       }
 
@@ -274,7 +305,6 @@
       });
     }
 
-    // --- FORM ACTIONS (CRUD) ---
     async function handleSaveTx(e) {
       e.preventDefault();
       
@@ -293,7 +323,7 @@
         }
         resetForm();
         renderApp();
-        alert('Tersimpan sementara di mode demo!');
+        alert('Tersimpan di mode demo!');
         return;
       }
 
@@ -341,19 +371,18 @@
       document.getElementById('btn-cancel-edit').classList.add('hidden');
     }
 
-    // --- AUTHENTICATION PERBAIKAN ---
+    // --- AUTHENTICATION ---
     async function handleAuth(e) {
-      e.preventDefault(); // Mencegah reload halaman bawaan form browser
+      e.preventDefault();
 
       if (isLocked) {
-        alert("Terlalu banyak percobaan gagal! Kunci dibuka kembali dalam 30 detik.");
+        alert("Terlalu banyak percobaan gagal! Kunci dibuka dalam 30 detik.");
         return;
       }
 
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value;
 
-      // Panggil Auth Supabase
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
@@ -374,12 +403,11 @@
         return;
       }
 
-      // Jika Berhasil
       loginAttempts = 0;
       currentUser = data.user;
       alert("Berhasil login sebagai Pemilik!");
-      closeAuthModal();
-      updateUIForAuth(); // Update UI langsung
+      closeModal();
+      updateUIForAuth();
     }
 
     async function handleLogout() {
@@ -387,14 +415,6 @@
       currentUser = null;
       updateUIForAuth();
       alert("Berhasil logout!");
-    }
-
-    function openAuthModal() { 
-      document.getElementById('auth-modal').classList.remove('hidden'); 
-    }
-    
-    function closeAuthModal() { 
-      document.getElementById('auth-modal').classList.add('hidden'); 
     }
 
     // --- UTILS ---

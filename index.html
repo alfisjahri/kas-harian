@@ -41,7 +41,7 @@
     </div>
   </header>
 
-  <main class="max-w-md mx-auto p-4 space-y-4">
+  <main class="max-w-md mx-auto p-4 space-y-3">
 
     <!-- Banner Demo Alert -->
     <div id="demo-banner" class="bg-amber-50 border border-amber-200 p-3 rounded-xl flex justify-between items-center text-xs text-amber-800">
@@ -51,26 +51,28 @@
       </button>
     </div>
 
-    <!-- KARTU SISA PITIS (AUTO-HIDE / SENSOR NOMINAL) -->
-    <section class="bg-white p-4 rounded-xl shadow text-center cursor-pointer active:scale-98 transition" id="btn-toggle-pitis">
-      <div class="flex justify-center items-center gap-1 text-xs text-indigo-600 font-bold uppercase tracking-wider">
-        <span>💰 Sisa Pitis</span>
-        <span id="pitis-eye-icon" class="text-sm">👁️</span>
+    <!-- 1. ACCORDION: SISA PITIS (AUTO-HIDE DROPDOWN) -->
+    <section class="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
+      <button type="button" id="btn-toggle-pitis-acc" class="w-full p-4 flex justify-between items-center font-bold text-gray-700 hover:bg-gray-50 transition">
+        <span class="flex items-center gap-2">💰 Sisa Pitis</span>
+        <span id="pitis-acc-arrow" class="text-xs transition-transform duration-200 transform">▼</span>
+      </button>
+
+      <div id="pitis-acc-content" class="hidden p-4 pt-0 border-t bg-white text-center cursor-pointer" id="btn-toggle-pitis-sensor">
+        <div class="pt-3 pb-1">
+          <p id="stat-sisa" class="text-2xl font-black text-indigo-700">Rp •••••••</p>
+          <p class="text-[10px] text-gray-400 mt-1">(Tekan angka untuk buka/tutup sensor <span id="pitis-eye-icon">👁️</span>)</p>
+        </div>
       </div>
-      <p id="stat-sisa" class="text-2xl font-black text-indigo-700 mt-1">Rp •••••••</p>
-      <p class="text-[10px] text-gray-400 mt-0.5">(Tekan untuk lihat/sembunyikan)</p>
     </section>
 
-    <!-- REKAPAN & FILTER (ACCORDION / AUTO-HIDE DROPDOWN) -->
+    <!-- 2. ACCORDION: REKAPAN & FILTER (AUTO-HIDE DROPDOWN) -->
     <section class="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
-      
-      <!-- Header Accordion (Bisa diklik buat Buka/Tutup) -->
-      <button type="button" id="btn-toggle-summary" class="w-full p-4 flex justify-between items-center font-bold text-gray-700 bg-white hover:bg-gray-50 transition">
+      <button type="button" id="btn-toggle-summary" class="w-full p-4 flex justify-between items-center font-bold text-gray-700 hover:bg-gray-50 transition">
         <span class="flex items-center gap-2">📊 Rekapan & Filter</span>
         <span id="summary-arrow" class="text-xs transition-transform duration-200 transform">▼</span>
       </button>
 
-      <!-- Isi Panel Rekapan (Default: Hidden biar ringkas) -->
       <div id="summary-content" class="hidden p-4 pt-0 border-t space-y-3 bg-white">
         
         <!-- Filter Controls -->
@@ -123,7 +125,7 @@
           </div>
         </div>
 
-        <!-- Box Angka Pemasukan / Pengeluaran (Teks Ringkas Gak Bakal Terpotong) -->
+        <!-- Box Angka -->
         <div class="grid grid-cols-2 gap-2 text-center pt-2">
           <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
             <span class="text-xs text-emerald-600 font-semibold block">Pemasukan</span>
@@ -138,16 +140,21 @@
       </div>
     </section>
 
-    <!-- Import Google Sheets (CSV) Section -->
-    <section id="import-section" class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl shadow space-y-2">
-      <h2 class="font-bold text-indigo-900 text-sm flex items-center gap-1">📊 Import Data Google Sheets (.csv)</h2>
-      <p class="text-xs text-indigo-700">Download Google Sheets kamu sebagai file .CSV, lalu upload di sini:</p>
-      
-      <div class="flex gap-2 items-center pt-1">
-        <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
-        <button id="btn-import-csv" type="button" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-indigo-700 shadow">
-          Upload
-        </button>
+    <!-- 3. ACCORDION: IMPORT DATA (AUTO-HIDE DROPDOWN) -->
+    <section class="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
+      <button type="button" id="btn-toggle-import" class="w-full p-4 flex justify-between items-center font-bold text-gray-700 hover:bg-gray-50 transition">
+        <span class="flex items-center gap-2">📑 Import Data (.csv)</span>
+        <span id="import-arrow" class="text-xs transition-transform duration-200 transform">▼</span>
+      </button>
+
+      <div id="import-content" class="hidden p-4 pt-2 border-t space-y-2 bg-indigo-50/50">
+        <p class="text-xs text-indigo-700">Download Google Sheets kamu sebagai file .CSV, lalu upload di sini:</p>
+        <div class="flex gap-2 items-center pt-1">
+          <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+          <button id="btn-import-csv" type="button" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-indigo-700 shadow">
+            Upload
+          </button>
+        </div>
       </div>
     </section>
 
@@ -270,7 +277,15 @@
     window.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('tx-date').valueAsDate = new Date();
 
-      // Toggle Accordion Rekapan
+      // Accordion 1: Sisa Pitis
+      document.getElementById('btn-toggle-pitis-acc').addEventListener('click', () => {
+        const content = document.getElementById('pitis-acc-content');
+        const arrow = document.getElementById('pitis-acc-arrow');
+        content.classList.toggle('hidden');
+        arrow.classList.toggle('rotate-180');
+      });
+
+      // Accordion 2: Rekapan & Filter
       document.getElementById('btn-toggle-summary').addEventListener('click', () => {
         const content = document.getElementById('summary-content');
         const arrow = document.getElementById('summary-arrow');
@@ -278,8 +293,16 @@
         arrow.classList.toggle('rotate-180');
       });
 
-      // Toggle Sensor Sisa Pitis
-      document.getElementById('btn-toggle-pitis').addEventListener('click', () => {
+      // Accordion 3: Import CSV
+      document.getElementById('btn-toggle-import').addEventListener('click', () => {
+        const content = document.getElementById('import-content');
+        const arrow = document.getElementById('import-arrow');
+        content.classList.toggle('hidden');
+        arrow.classList.toggle('rotate-180');
+      });
+
+      // Toggle Sensor Angka Pitis
+      document.getElementById('pitis-acc-content').addEventListener('click', () => {
         isPitisHidden = !isPitisHidden;
         updatePitisDisplay();
       });
@@ -395,7 +418,7 @@
         transactions = dummyTransactions;
       }
 
-      // 1. HITUNG SALDO KAS GLOBAL (SISA PITIS AKUMULASI)
+      // 1. SALDO KAS GLOBAL (SISA PITIS)
       let globalMasuk = 0;
       let globalKeluar = 0;
 
@@ -408,7 +431,7 @@
       cachedSisaPitisFormatted = formatRp(totalSisaKasGlobal);
       updatePitisDisplay();
 
-      // 2. HITUNG REKAPAN TERFILTER
+      // 2. REKAPAN TERFILTER
       const filtered = getFilteredData(transactions);
 
       let totalMasukPeriode = 0;

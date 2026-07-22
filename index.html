@@ -3,23 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pencatat Keuangan Harian</title>
+  <title>CatatDuit - Pencatat Keuangan Privat</title>
 
-  <!-- Tailwind CSS via CDN (tanpa npm) -->
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="description" content="Aplikasi Pencatat Keuangan Harian Privat">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CatatDuit">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2953/2953361.png">
+
+  <!-- Dynamic PWA Manifest via Data URI (Tanpa butuh file JSON terpisah) -->
+  <link rel="manifest" id="manifest-placeholder">
+
+  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS Client via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-12">
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-12 select-none">
 
   <!-- Header & Mode Banner -->
   <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
     <div>
-      <h1 class="text-xl font-bold">💰 CatatDuit</h1>
+      <h1 class="text-xl font-bold flex items-center gap-1">💰 CatatDuit</h1>
       <p id="user-status" class="text-xs text-indigo-200">Mode Demo (Data tidak tersimpan)</p>
     </div>
     <div id="auth-btn-container">
-      <button id="btn-login-modal" onclick="openAuthModal()" class="bg-white text-indigo-600 px-3 py-1 rounded-lg text-sm font-semibold shadow hover:bg-indigo-50">Login / Daftar</button>
+      <button id="btn-login-modal" onclick="openAuthModal()" class="bg-white text-indigo-600 px-3 py-1 rounded-lg text-sm font-semibold shadow hover:bg-indigo-50">Login</button>
       <button id="btn-logout" onclick="handleLogout()" class="hidden bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600">Logout</button>
     </div>
   </header>
@@ -90,31 +101,31 @@
     <section class="bg-white p-4 rounded-xl shadow space-y-3">
       <h2 class="font-bold text-gray-700">Riwayat Transaksi</h2>
       <div id="tx-list" class="space-y-2">
-        <!-- Item transaksi akan dirender via JS -->
+        <!-- Item dirender via JS -->
       </div>
     </section>
 
   </main>
 
-  <!-- Modal Login / Signup -->
+  <!-- Modal Login Privat -->
   <div id="auth-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
     <div class="bg-white p-6 rounded-xl w-full max-w-sm space-y-4 relative">
       <button onclick="closeAuthModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">&times;</button>
-      <h2 class="text-lg font-bold text-gray-800 text-center" id="auth-modal-title">Masuk / Daftar</h2>
+      <h2 class="text-lg font-bold text-gray-800 text-center">Login Pemilik</h2>
+      <p class="text-xs text-gray-400 text-center -mt-2">Khusus akun terdaftar di Supabase</p>
       
       <form onsubmit="handleAuth(event)" class="space-y-3">
         <div>
-          <label class="block text-xs text-gray-500 mb-1">Email</label>
+          <label class="block text-xs text-gray-500 mb-1">Email Owner</label>
           <input type="email" id="auth-email" required class="w-full p-2 border rounded-lg text-sm">
         </div>
         <div>
           <label class="block text-xs text-gray-500 mb-1">Password</label>
-          <input type="password" id="auth-password" required minlength="6" class="w-full p-2 border rounded-lg text-sm">
+          <input type="password" id="auth-password" required class="w-full p-2 border rounded-lg text-sm">
         </div>
 
-        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700">Lanjutkan</button>
+        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700">Masuk Aplikasi</button>
       </form>
-      <p class="text-xs text-gray-400 text-center">Jika email belum terdaftar, akun baru akan otomatis dibuatkan.</p>
     </div>
   </div>
 
@@ -122,7 +133,7 @@
   <script>
     // --- KONFIGURASI SUPABASE ---
     const SUPABASE_URL = "https://sgxztlpxabehtnemksvr.supabase.co"; 
-    const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e";
+    const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e"; // Pakai Publishable Key
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -134,12 +145,42 @@
 
     let currentUser = null;
     let realTransactions = [];
+    let loginAttempts = 0;
+    let isLocked = false;
+
+    // --- SETUP PWA MANIFEST (INLINE) ---
+    const manifestData = {
+      name: "CatatDuit Privat",
+      short_name: "CatatDuit",
+      start_url: "./",
+      display: "standalone",
+      background_color: "#f3f4f6",
+      theme_color: "#4f46e5",
+      icons: [{
+        src: "https://cdn-icons-png.flaticon.com/512/2953/2953361.png",
+        sizes: "512x512",
+        type: "image/png"
+      }]
+    };
+    const stringManifest = JSON.stringify(manifestData);
+    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    document.getElementById('manifest-placeholder').setAttribute('href', manifestURL);
+
+    // Register Service Worker dasar untuk PWA
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', (e) => self.skipWaiting());
+        self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
+      `;
+      const blobSW = new Blob([swCode], {type: 'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(blobSW)).catch(() => {});
+    }
 
     // --- INITIALIZATION ---
     window.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('tx-date').valueAsDate = new Date();
       
-      // Cek sesi user
       const { data: { user } } = await supabase.auth.getUser();
       currentUser = user;
       updateUIForAuth();
@@ -156,12 +197,12 @@
       const logoutBtn = document.getElementById('btn-logout');
 
       if (currentUser) {
-        statusEl.innerText = `Akun: ${currentUser.email}`;
+        statusEl.innerText = `Pemilik: ${currentUser.email}`;
         statusEl.className = "text-xs text-emerald-200 font-medium";
         loginBtn.classList.add('hidden');
         logoutBtn.classList.remove('hidden');
       } else {
-        statusEl.innerText = "Mode Demo (Login untuk simpan data permanent)";
+        statusEl.innerText = "Mode Demo (Khusus Pratinjau)";
         statusEl.className = "text-xs text-indigo-200";
         loginBtn.classList.remove('hidden');
         logoutBtn.classList.add('hidden');
@@ -185,11 +226,9 @@
         transactions = dummyTransactions;
       }
 
-      // Filtering berdasarkan periode
       const period = document.getElementById('filter-period').value;
       const filtered = filterByPeriod(transactions, period);
 
-      // Hitung Rekapan
       let totalMasuk = 0;
       let totalKeluar = 0;
 
@@ -201,7 +240,6 @@
       document.getElementById('stat-pemasukan').innerText = formatRp(totalMasuk);
       document.getElementById('stat-pengeluaran').innerText = formatRp(totalKeluar);
 
-      // Render List
       const listContainer = document.getElementById('tx-list');
       listContainer.innerHTML = '';
 
@@ -244,7 +282,6 @@
       const description = document.getElementById('tx-desc').value;
 
       if (!currentUser) {
-        // Mode Demo (Lokal sementara)
         if (id) {
           const idx = dummyTransactions.findIndex(t => t.id === id);
           if (idx !== -1) dummyTransactions[idx] = { id, date, type, amount, description };
@@ -253,11 +290,10 @@
         }
         resetForm();
         renderApp();
-        alert('Tersimpan di mode demo! (Login agar data tersimpan di cloud)');
+        alert('Tersimpan sementara di mode demo!');
         return;
       }
 
-      // Mode Logged In (Supabase)
       if (id) {
         await supabase.from('transactions').update({ date, type, amount, description }).eq('id', id);
       } else {
@@ -302,28 +338,40 @@
       document.getElementById('btn-cancel-edit').classList.add('hidden');
     }
 
-    // --- AUTHENTICATION HANDLERS ---
+    // --- AUTHENTICATION PRIVAT (MAKSIMAL 3X PERCOBAAN) ---
     async function handleAuth(e) {
       e.preventDefault();
-      const email = document.getElementById('auth-email').value;
-      const password = document.getElementById('auth-password').value;
 
-      // Coba Login dulu
-      let { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-      // Jika user belum terdaftar, otomatis daftarkan (SignUp)
-      if (error && error.message.includes('Invalid login credentials')) {
-        const signUpRes = await supabase.auth.signUp({ email, password });
-        if (signUpRes.error) {
-          alert("Gagal daftar: " + signUpRes.error.message);
-          return;
-        }
-        alert("Pendaftaran berhasil & otomatis masuk!");
-      } else if (error) {
-        alert("Error: " + error.message);
+      if (isLocked) {
+        alert("Terlalu banyak percobaan gagal! Kunci dibuka kembali dalam 30 detik.");
         return;
       }
 
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+
+      let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        loginAttempts++;
+        const sisa = 3 - loginAttempts;
+
+        if (loginAttempts >= 3) {
+          isLocked = true;
+          alert("Gagal 3 kali! Login dikunci selama 30 detik untuk pencegahan bot.");
+          setTimeout(() => {
+            isLocked = false;
+            loginAttempts = 0;
+          }, 30000);
+          return;
+        }
+
+        alert(`Gagal login: Password/Email salah. Sisa percobaan: ${sisa}`);
+        return;
+      }
+
+      // Login sukses
+      loginAttempts = 0;
       closeAuthModal();
     }
 

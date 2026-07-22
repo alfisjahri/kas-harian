@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pitis - Pencatat Keuangan Privat</title>
+  <title>Pitis - Catat Keuangan Privat</title>
 
   <!-- PWA Meta Tags -->
   <meta name="theme-color" content="#4f46e5">
-  <meta name="description" content="Aplikasi Pencatat Keuangan Harian Privat">
+  <meta name="description" content="Aplikasi Catat Pitis / Keuangan Privat">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="CatatDuit">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2953/2953361.png">
+  <meta name="apple-mobile-web-app-title" content="Pitis">
+  <link id="app-apple-icon" rel="apple-touch-icon" href="./icon.png">
 
-  <!-- Dynamic PWA Manifest -->
+  <!-- Dynamic PWA Manifest Placeholder -->
   <link rel="manifest" id="manifest-placeholder">
 
   <!-- Tailwind CSS via CDN -->
@@ -28,7 +28,7 @@
   <!-- Header & Mode Banner -->
   <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
     <div>
-      <h1 class="text-xl font-bold flex items-center gap-1">💰 Pitis</h1>
+      <h1 class="text-xl font-bold flex items-center gap-1.5">💰 Pitis</h1>
       <p id="user-status" class="text-xs text-indigo-200">Mode Demo (Data tidak tersimpan)</p>
     </div>
     <div id="auth-btn-container">
@@ -58,7 +58,7 @@
         <span id="pitis-acc-arrow" class="text-xs transition-transform duration-200 transform">▼</span>
       </button>
 
-      <div id="pitis-acc-content" class="hidden p-4 pt-0 border-t bg-white text-center cursor-pointer" id="btn-toggle-pitis-sensor">
+      <div id="pitis-acc-content" class="hidden p-4 pt-0 border-t bg-white text-center cursor-pointer">
         <div class="pt-3 pb-1">
           <p id="stat-sisa" class="text-2xl font-black text-indigo-700">Rp •••••••</p>
           <p class="text-[10px] text-gray-400 mt-1">(Tekan angka untuk buka/tutup sensor <span id="pitis-eye-icon">👁️</span>)</p>
@@ -185,7 +185,7 @@
 
         <div>
           <label class="block text-xs text-gray-500 mb-1">Keterangan</label>
-          <input type="text" id="tx-desc" required placeholder="Contoh: Makan Siang / Gaji" class="w-full p-2 border rounded-lg text-sm bg-gray-50">
+          <input type="text" id="tx-desc" required placeholder="Contoh: Bensin / Makan / Project" class="w-full p-2 border rounded-lg text-sm bg-gray-50">
         </div>
 
         <div class="flex gap-2">
@@ -229,6 +229,61 @@
 
   <!-- SINGLE SCRIPT -->
   <script>
+    // --- LINK IKON APLIKASI (MENGGUNAKAN FILE icon.png REPO GITHUB) ---
+    const APP_ICON_URL = "./icon.png"; 
+
+    // Update Apple Icon Tag
+    document.getElementById('app-apple-icon').setAttribute('href', APP_ICON_URL);
+
+    // --- SETUP PWA MANIFEST & SERVICE WORKER ---
+    const manifestData = {
+      name: "Pitis",
+      short_name: "Pitis",
+      start_url: "./",
+      scope: "./",
+      display: "standalone",
+      background_color: "#f3f4f6",
+      theme_color: "#4f46e5",
+      icons: [
+        {
+          src: APP_ICON_URL,
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "any maskable"
+        },
+        {
+          src: APP_ICON_URL,
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any maskable"
+        }
+      ]
+    };
+
+    // Inject Manifest Dynamic
+    const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+    document.getElementById('manifest-placeholder').setAttribute('href', URL.createObjectURL(manifestBlob));
+
+    // Register Service Worker PWA
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        const CACHE_NAME = 'pitis-v1';
+        self.addEventListener('install', (event) => {
+          self.skipWaiting();
+        });
+        self.addEventListener('activate', (event) => {
+          event.waitUntil(clients.claim());
+        });
+        self.addEventListener('fetch', (event) => {
+          event.respondWith(
+            fetch(event.request).catch(() => caches.match(event.request))
+          );
+        });
+      `;
+      const swBlob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+    }
+
     // --- KONFIGURASI SUPABASE ---
     const SUPABASE_URL = "https://sgxztlpxabehtnemksvr.supabase.co"; 
     const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e";
@@ -248,30 +303,6 @@
     // State Sensor Sisa Pitis
     let isPitisHidden = true;
     let cachedSisaPitisFormatted = "Rp 0";
-
-    // --- PWA SETUP ---
-    const manifestData = {
-      name: "CatatDuit Privat",
-      short_name: "CatatDuit",
-      start_url: "./",
-      display: "standalone",
-      background_color: "#f3f4f6",
-      theme_color: "#4f46e5",
-      icons: [{
-        src: "https://cdn-icons-png.flaticon.com/512/2953/2953361.png",
-        sizes: "512x512",
-        type: "image/png"
-      }]
-    };
-    document.getElementById('manifest-placeholder').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifestData)], {type: 'application/json'})));
-
-    if ('serviceWorker' in navigator) {
-      const swCode = `
-        self.addEventListener('install', (e) => self.skipWaiting());
-        self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
-      `;
-      navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode], {type: 'application/javascript'}))).catch(() => {});
-    }
 
     // --- INITIALIZATION & EVENT LISTENERS ---
     window.addEventListener('DOMContentLoaded', async () => {

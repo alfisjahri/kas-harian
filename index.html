@@ -23,7 +23,7 @@
   <!-- PapaParse Library via CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-16">
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-16 select-none">
 
   <!-- Header & Mode Banner -->
   <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
@@ -51,30 +51,41 @@
       </button>
     </div>
 
-    <!-- Ringkasan Keuangan & Panel Filter Advance -->
-    <section class="bg-white p-4 rounded-xl shadow space-y-3">
-      
-      <!-- KARTU SISA KAS / SALDO GLOBAL (AKUMULASI SEPANJANG MASA) -->
-      <div id="card-sisa-kas" class="bg-indigo-50 p-3.5 rounded-xl border border-indigo-100 text-center shadow-sm">
-        <span class="text-xs text-indigo-600 font-semibold uppercase tracking-wider block mb-0.5">💰 Total Saldo Kas Saat Ini (Global)</span>
-        <p id="stat-sisa" class="text-2xl font-black text-indigo-700">Rp 0</p>
+    <!-- KARTU SISA PITIS (AUTO-HIDE / SENSOR NOMINAL) -->
+    <section class="bg-white p-4 rounded-xl shadow text-center cursor-pointer active:scale-98 transition" id="btn-toggle-pitis">
+      <div class="flex justify-center items-center gap-1 text-xs text-indigo-600 font-bold uppercase tracking-wider">
+        <span>💰 Sisa Pitis</span>
+        <span id="pitis-eye-icon" class="text-sm">👁️</span>
       </div>
+      <p id="stat-sisa" class="text-2xl font-black text-indigo-700 mt-1">Rp •••••••</p>
+      <p class="text-[10px] text-gray-400 mt-0.5">(Tekan untuk lihat/sembunyikan)</p>
+    </section>
 
-      <div class="space-y-2 border-t border-b py-3">
-        <div class="flex justify-between items-center">
-          <h2 class="font-bold text-gray-700">Filter Rekapan</h2>
-          <select id="filter-type" class="text-xs bg-gray-100 p-1.5 rounded-md font-semibold border border-gray-300">
-            <option value="month" selected>Per Bulan</option>
-            <option value="quarter">Per Kuartal (Q1 - Q4)</option>
-            <option value="semester">Per Semester (6 Bulan)</option>
-            <option value="year">Per Tahun</option>
-          </select>
-        </div>
+    <!-- REKAPAN & FILTER (ACCORDION / AUTO-HIDE DROPDOWN) -->
+    <section class="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
+      
+      <!-- Header Accordion (Bisa diklik buat Buka/Tutup) -->
+      <button type="button" id="btn-toggle-summary" class="w-full p-4 flex justify-between items-center font-bold text-gray-700 bg-white hover:bg-gray-50 transition">
+        <span class="flex items-center gap-2">📊 Rekapan & Filter</span>
+        <span id="summary-arrow" class="text-xs transition-transform duration-200 transform">▼</span>
+      </button>
 
-        <!-- Opsi Filter Dynamic UI -->
-        <div id="filter-controls" class="space-y-2 pt-1">
-          
-          <!-- Mode Per Bulan -->
+      <!-- Isi Panel Rekapan (Default: Hidden biar ringkas) -->
+      <div id="summary-content" class="hidden p-4 pt-0 border-t space-y-3 bg-white">
+        
+        <!-- Filter Controls -->
+        <div class="space-y-2 pt-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-semibold text-gray-500">Periode:</span>
+            <select id="filter-type" class="text-xs bg-gray-100 p-1.5 rounded-md font-semibold border border-gray-300">
+              <option value="month" selected>Per Bulan</option>
+              <option value="quarter">Per Kuartal (Q1 - Q4)</option>
+              <option value="semester">Per Semester (6 Bulan)</option>
+              <option value="year">Per Tahun</option>
+            </select>
+          </div>
+
+          <!-- Dynamic Controls -->
           <div id="ctrl-month" class="flex flex-wrap gap-2 items-center justify-between">
             <input type="month" id="picker-month" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50">
             <select id="picker-submonth" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1">
@@ -88,7 +99,6 @@
             <input type="date" id="picker-specific-day" class="hidden text-xs p-1.5 border rounded-md font-semibold bg-gray-50 w-full">
           </div>
 
-          <!-- Mode Kuartal -->
           <div id="ctrl-quarter" class="hidden flex gap-2 items-center justify-between">
             <select id="picker-quarter-year" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1"></select>
             <select id="picker-quarter-q" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1">
@@ -99,7 +109,6 @@
             </select>
           </div>
 
-          <!-- Mode Semester -->
           <div id="ctrl-semester" class="hidden flex gap-2 items-center justify-between">
             <select id="picker-semester-year" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1"></select>
             <select id="picker-semester-s" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1">
@@ -108,24 +117,24 @@
             </select>
           </div>
 
-          <!-- Mode Tahun -->
           <div id="ctrl-year" class="hidden flex gap-2 items-center justify-between">
             <label class="text-xs font-medium text-gray-500">Tahun:</label>
             <select id="picker-year-only" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1"></select>
           </div>
+        </div>
 
+        <!-- Box Angka Pemasukan / Pengeluaran (Teks Ringkas Gak Bakal Terpotong) -->
+        <div class="grid grid-cols-2 gap-2 text-center pt-2">
+          <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+            <span class="text-xs text-emerald-600 font-semibold block">Pemasukan</span>
+            <p id="stat-pemasukan" class="text-base font-bold text-emerald-700 mt-1">Rp 0</p>
+          </div>
+          <div class="bg-rose-50 p-3 rounded-lg border border-rose-100">
+            <span class="text-xs text-rose-600 font-semibold block">Pengeluaran</span>
+            <p id="stat-pengeluaran" class="text-base font-bold text-rose-700 mt-1">Rp 0</p>
+          </div>
         </div>
-      </div>
 
-      <div class="grid grid-cols-2 gap-2 text-center">
-        <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
-          <span class="text-xs text-emerald-600 font-medium">Pemasukan Periode Ini</span>
-          <p id="stat-pemasukan" class="text-lg font-bold text-emerald-700">Rp 0</p>
-        </div>
-        <div class="bg-rose-50 p-3 rounded-lg border border-rose-100">
-          <span class="text-xs text-rose-600 font-medium">Pengeluaran Periode Ini</span>
-          <p id="stat-pengeluaran" class="text-lg font-bold text-rose-700">Rp 0</p>
-        </div>
       </div>
     </section>
 
@@ -228,6 +237,10 @@
     let realTransactions = [];
     let loginAttempts = 0;
     let isLocked = false;
+    
+    // State Sensor Sisa Pitis
+    let isPitisHidden = true;
+    let cachedSisaPitisFormatted = "Rp 0";
 
     // --- PWA SETUP ---
     const manifestData = {
@@ -256,6 +269,20 @@
     // --- INITIALIZATION & EVENT LISTENERS ---
     window.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('tx-date').valueAsDate = new Date();
+
+      // Toggle Accordion Rekapan
+      document.getElementById('btn-toggle-summary').addEventListener('click', () => {
+        const content = document.getElementById('summary-content');
+        const arrow = document.getElementById('summary-arrow');
+        content.classList.toggle('hidden');
+        arrow.classList.toggle('rotate-180');
+      });
+
+      // Toggle Sensor Sisa Pitis
+      document.getElementById('btn-toggle-pitis').addEventListener('click', () => {
+        isPitisHidden = !isPitisHidden;
+        updatePitisDisplay();
+      });
 
       // Populate Dropdown Tahun
       const currentYear = new Date().getFullYear();
@@ -339,7 +366,20 @@
       renderApp();
     }
 
-    // --- RENDER & LOGIKA REKAPAN SISA KAS GLOBAL ---
+    function updatePitisDisplay() {
+      const statSisaEl = document.getElementById('stat-sisa');
+      const eyeIconEl = document.getElementById('pitis-eye-icon');
+
+      if (isPitisHidden) {
+        statSisaEl.innerText = "Rp •••••••";
+        eyeIconEl.innerText = "👁️";
+      } else {
+        statSisaEl.innerText = cachedSisaPitisFormatted;
+        eyeIconEl.innerText = "🙈";
+      }
+    }
+
+    // --- RENDER & REKAPAN KALKULASI ---
     async function renderApp() {
       let transactions = [];
 
@@ -355,7 +395,7 @@
         transactions = dummyTransactions;
       }
 
-      // 1. HITUNG SALDO KAS GLOBAL (DARI SELURUH DATA DARI AWAL BIKIN AKUN / TANPA TERFILTER)
+      // 1. HITUNG SALDO KAS GLOBAL (SISA PITIS AKUMULASI)
       let globalMasuk = 0;
       let globalKeluar = 0;
 
@@ -365,21 +405,10 @@
       });
 
       const totalSisaKasGlobal = globalMasuk - globalKeluar;
+      cachedSisaPitisFormatted = formatRp(totalSisaKasGlobal);
+      updatePitisDisplay();
 
-      // Update Tampilan Saldo Kas Global
-      const statSisaEl = document.getElementById('stat-sisa');
-      const cardSisaEl = document.getElementById('card-sisa-kas');
-      statSisaEl.innerText = formatRp(totalSisaKasGlobal);
-
-      if (totalSisaKasGlobal < 0) {
-        cardSisaEl.className = "bg-rose-50 p-3.5 rounded-xl border border-rose-200 text-center shadow-sm";
-        statSisaEl.className = "text-2xl font-black text-rose-700";
-      } else {
-        cardSisaEl.className = "bg-indigo-50 p-3.5 rounded-xl border border-indigo-100 text-center shadow-sm";
-        statSisaEl.className = "text-2xl font-black text-indigo-700";
-      }
-
-      // 2. HITUNG REKAPAN PERIODE TERFILTER (SESUAI BULAN / PERIODE DILIHAT)
+      // 2. HITUNG REKAPAN TERFILTER
       const filtered = getFilteredData(transactions);
 
       let totalMasukPeriode = 0;
@@ -393,7 +422,7 @@
       document.getElementById('stat-pemasukan').innerText = formatRp(totalMasukPeriode);
       document.getElementById('stat-pengeluaran').innerText = formatRp(totalKeluarPeriode);
 
-      // Render Riwayat Transaksi
+      // Render Riwayat
       const listContainer = document.getElementById('tx-list');
       listContainer.innerHTML = '';
 

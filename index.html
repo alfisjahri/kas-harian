@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pencatat Keuangan Harian</title>
+
+  <!-- Tailwind CSS via CDN (tanpa npm) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-12">
+
+  <!-- Header & Mode Banner -->
+  <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
+    <div>
+      <h1 class="text-xl font-bold">💰 CatatDuit</h1>
+      <p id="user-status" class="text-xs text-indigo-200">Mode Demo (Data tidak tersimpan)</p>
+    </div>
+    <div id="auth-btn-container">
+      <button id="btn-login-modal" onclick="openAuthModal()" class="bg-white text-indigo-600 px-3 py-1 rounded-lg text-sm font-semibold shadow hover:bg-indigo-50">Login / Daftar</button>
+      <button id="btn-logout" onclick="handleLogout()" class="hidden bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600">Logout</button>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-4">
+
+    <!-- Ringkasan Keuangan -->
+    <section class="bg-white p-4 rounded-xl shadow space-y-3">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="font-bold text-gray-700">Ringkasan</h2>
+        <select id="filter-period" onchange="renderApp()" class="text-xs bg-gray-100 p-1.5 rounded-md font-semibold border border-gray-300">
+          <option value="today">Hari Ini</option>
+          <option value="week">Minggu Ini</option>
+          <option value="month">Bulan Ini</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 text-center">
+        <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+          <span class="text-xs text-emerald-600 font-medium">Pemasukan</span>
+          <p id="stat-pemasukan" class="text-lg font-bold text-emerald-700">Rp 0</p>
+        </div>
+        <div class="bg-rose-50 p-3 rounded-lg border border-rose-100">
+          <span class="text-xs text-rose-600 font-medium">Pengeluaran</span>
+          <p id="stat-pengeluaran" class="text-lg font-bold text-rose-700">Rp 0</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Form Input Transaksi -->
+    <section class="bg-white p-4 rounded-xl shadow">
+      <h2 id="form-title" class="font-bold text-gray-700 mb-3">Tambah Transaksi</h2>
+      <form id="tx-form" onsubmit="handleSaveTx(event)" class="space-y-3">
+        <input type="hidden" id="tx-id">
+
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Tanggal</label>
+          <input type="date" id="tx-date" required class="w-full p-2 border rounded-lg text-sm bg-gray-50">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Tipe</label>
+            <select id="tx-type" class="w-full p-2 border rounded-lg text-sm bg-gray-50 font-medium">
+              <option value="pengeluaran">Pengeluaran</option>
+              <option value="pemasukan">Pemasukan</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Nominal (Rp)</label>
+            <input type="number" id="tx-amount" required min="1" placeholder="50000" class="w-full p-2 border rounded-lg text-sm bg-gray-50">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Keterangan</label>
+          <input type="text" id="tx-desc" required placeholder="Contoh: Makan Siang / Gaji" class="w-full p-2 border rounded-lg text-sm bg-gray-50">
+        </div>
+
+        <div class="flex gap-2">
+          <button type="submit" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold text-sm hover:bg-indigo-700 transition">Simpan</button>
+          <button type="button" id="btn-cancel-edit" onclick="resetForm()" class="hidden bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold">Batal</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Daftar Catatan -->
+    <section class="bg-white p-4 rounded-xl shadow space-y-3">
+      <h2 class="font-bold text-gray-700">Riwayat Transaksi</h2>
+      <div id="tx-list" class="space-y-2">
+        <!-- Item transaksi akan dirender via JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal Login / Signup -->
+  <div id="auth-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white p-6 rounded-xl w-full max-w-sm space-y-4 relative">
+      <button onclick="closeAuthModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">&times;</button>
+      <h2 class="text-lg font-bold text-gray-800 text-center" id="auth-modal-title">Masuk / Daftar</h2>
+      
+      <form onsubmit="handleAuth(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Email</label>
+          <input type="email" id="auth-email" required class="w-full p-2 border rounded-lg text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">Password</label>
+          <input type="password" id="auth-password" required minlength="6" class="w-full p-2 border rounded-lg text-sm">
+        </div>
+
+        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700">Lanjutkan</button>
+      </form>
+      <p class="text-xs text-gray-400 text-center">Jika email belum terdaftar, akun baru akan otomatis dibuatkan.</p>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // --- KONFIGURASI SUPABASE ---
+    const SUPABASE_URL = "https://sgxztlpxabehtnemksvr.supabase.co"; 
+    const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Dummy data untuk non-login user
+    let dummyTransactions = [
+      { id: '1', date: new Date().toISOString().split('T')[0], type: 'pemasukan', amount: 500000, description: 'Gaji Freelance (Demo)' },
+      { id: '2', date: new Date().toISOString().split('T')[0], type: 'pengeluaran', amount: 25000, description: 'Kopi & Snack (Demo)' }
+    ];
+
+    let currentUser = null;
+    let realTransactions = [];
+
+    // --- INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('tx-date').valueAsDate = new Date();
+      
+      // Cek sesi user
+      const { data: { user } } = await supabase.auth.getUser();
+      currentUser = user;
+      updateUIForAuth();
+
+      supabase.auth.onAuthStateChange((_event, session) => {
+        currentUser = session?.user || null;
+        updateUIForAuth();
+      });
+    });
+
+    function updateUIForAuth() {
+      const statusEl = document.getElementById('user-status');
+      const loginBtn = document.getElementById('btn-login-modal');
+      const logoutBtn = document.getElementById('btn-logout');
+
+      if (currentUser) {
+        statusEl.innerText = `Akun: ${currentUser.email}`;
+        statusEl.className = "text-xs text-emerald-200 font-medium";
+        loginBtn.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+      } else {
+        statusEl.innerText = "Mode Demo (Login untuk simpan data permanent)";
+        statusEl.className = "text-xs text-indigo-200";
+        loginBtn.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+      }
+      renderApp();
+    }
+
+    // --- FETCH & RENDER ---
+    async function renderApp() {
+      let transactions = [];
+
+      if (currentUser) {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .order('date', { ascending: false });
+
+        if (!error) realTransactions = data;
+        transactions = realTransactions;
+      } else {
+        transactions = dummyTransactions;
+      }
+
+      // Filtering berdasarkan periode
+      const period = document.getElementById('filter-period').value;
+      const filtered = filterByPeriod(transactions, period);
+
+      // Hitung Rekapan
+      let totalMasuk = 0;
+      let totalKeluar = 0;
+
+      filtered.forEach(t => {
+        if (t.type === 'pemasukan') totalMasuk += Number(t.amount);
+        else totalKeluar += Number(t.amount);
+      });
+
+      document.getElementById('stat-pemasukan').innerText = formatRp(totalMasuk);
+      document.getElementById('stat-pengeluaran').innerText = formatRp(totalKeluar);
+
+      // Render List
+      const listContainer = document.getElementById('tx-list');
+      listContainer.innerHTML = '';
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">Belum ada transaksi di periode ini.</p>`;
+        return;
+      }
+
+      filtered.forEach(t => {
+        const isIncome = t.type === 'pemasukan';
+        const card = document.createElement('div');
+        card.className = "flex justify-between items-center p-3 border rounded-lg bg-gray-50 text-sm";
+        card.innerHTML = `
+          <div>
+            <p class="font-semibold text-gray-800">${t.description}</p>
+            <p class="text-xs text-gray-400">${t.date}</p>
+          </div>
+          <div class="text-right">
+            <p class="font-bold ${isIncome ? 'text-emerald-600' : 'text-rose-600'}">
+              ${isIncome ? '+' : '-'} ${formatRp(t.amount)}
+            </p>
+            <div class="space-x-2 text-xs mt-1">
+              <button onclick="prepareEdit('${t.id}')" class="text-indigo-600 hover:underline">Edit</button>
+              <button onclick="handleDelete('${t.id}')" class="text-rose-600 hover:underline">Hapus</button>
+            </div>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // --- FORM ACTIONS (CRUD) ---
+    async function handleSaveTx(e) {
+      e.preventDefault();
+      
+      const id = document.getElementById('tx-id').value;
+      const date = document.getElementById('tx-date').value;
+      const type = document.getElementById('tx-type').value;
+      const amount = Number(document.getElementById('tx-amount').value);
+      const description = document.getElementById('tx-desc').value;
+
+      if (!currentUser) {
+        // Mode Demo (Lokal sementara)
+        if (id) {
+          const idx = dummyTransactions.findIndex(t => t.id === id);
+          if (idx !== -1) dummyTransactions[idx] = { id, date, type, amount, description };
+        } else {
+          dummyTransactions.unshift({ id: Date.now().toString(), date, type, amount, description });
+        }
+        resetForm();
+        renderApp();
+        alert('Tersimpan di mode demo! (Login agar data tersimpan di cloud)');
+        return;
+      }
+
+      // Mode Logged In (Supabase)
+      if (id) {
+        await supabase.from('transactions').update({ date, type, amount, description }).eq('id', id);
+      } else {
+        await supabase.from('transactions').insert([{ user_id: currentUser.id, date, type, amount, description }]);
+      }
+
+      resetForm();
+      renderApp();
+    }
+
+    function prepareEdit(id) {
+      const list = currentUser ? realTransactions : dummyTransactions;
+      const tx = list.find(t => t.id === id);
+      if (!tx) return;
+
+      document.getElementById('tx-id').value = tx.id;
+      document.getElementById('tx-date').value = tx.date;
+      document.getElementById('tx-type').value = tx.type;
+      document.getElementById('tx-amount').value = tx.amount;
+      document.getElementById('tx-desc').value = tx.description;
+
+      document.getElementById('form-title').innerText = "Edit Transaksi";
+      document.getElementById('btn-cancel-edit').classList.remove('hidden');
+    }
+
+    async function handleDelete(id) {
+      if (!confirm('Yakin mau hapus catatan ini?')) return;
+
+      if (!currentUser) {
+        dummyTransactions = dummyTransactions.filter(t => t.id !== id);
+      } else {
+        await supabase.from('transactions').delete().eq('id', id);
+      }
+      renderApp();
+    }
+
+    function resetForm() {
+      document.getElementById('tx-form').reset();
+      document.getElementById('tx-id').value = '';
+      document.getElementById('tx-date').valueAsDate = new Date();
+      document.getElementById('form-title').innerText = "Tambah Transaksi";
+      document.getElementById('btn-cancel-edit').classList.add('hidden');
+    }
+
+    // --- AUTHENTICATION HANDLERS ---
+    async function handleAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+
+      // Coba Login dulu
+      let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      // Jika user belum terdaftar, otomatis daftarkan (SignUp)
+      if (error && error.message.includes('Invalid login credentials')) {
+        const signUpRes = await supabase.auth.signUp({ email, password });
+        if (signUpRes.error) {
+          alert("Gagal daftar: " + signUpRes.error.message);
+          return;
+        }
+        alert("Pendaftaran berhasil & otomatis masuk!");
+      } else if (error) {
+        alert("Error: " + error.message);
+        return;
+      }
+
+      closeAuthModal();
+    }
+
+    async function handleLogout() {
+      await supabase.auth.signOut();
+    }
+
+    function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
+    function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
+
+    // --- UTILS ---
+    function formatRp(num) {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
+    }
+
+    function filterByPeriod(data, period) {
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+
+      return data.filter(t => {
+        const tDate = new Date(t.date);
+        if (period === 'today') {
+          return t.date === todayStr;
+        } else if (period === 'week') {
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(now.getDate() - 7);
+          return tDate >= oneWeekAgo && tDate <= now;
+        } else if (period === 'month') {
+          return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+        }
+        return true;
+      });
+    }
+  </script>
+</body>
+</html>

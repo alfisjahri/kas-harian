@@ -1,4 +1,4 @@
-# 💰 CatatDuit Privat (PWA)
+# 💰 Pitis (PWA)
 
 Aplikasi pencatat keuangan harian privat, simpel, mobile-first, dan tanpa pusing setup environment local (`npm`/VS Code). Tinggal gas lewat browser!
 

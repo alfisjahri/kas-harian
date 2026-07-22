@@ -11,10 +11,10 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Pitis">
-  <link id="app-apple-icon" rel="apple-touch-icon" href="./icon.png">
+  <link rel="apple-touch-icon" href="./icon.png">
 
-  <!-- Dynamic PWA Manifest Placeholder -->
-  <link rel="manifest" id="manifest-placeholder">
+  <!-- Link ke Manifest Fisik -->
+  <link rel="manifest" href="./manifest.json">
 
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -229,59 +229,9 @@
 
   <!-- SINGLE SCRIPT -->
   <script>
-    // --- LINK IKON APLIKASI (MENGGUNAKAN FILE icon.png REPO GITHUB) ---
-    const APP_ICON_URL = "./icon.png"; 
-
-    // Update Apple Icon Tag
-    document.getElementById('app-apple-icon').setAttribute('href', APP_ICON_URL);
-
-    // --- SETUP PWA MANIFEST & SERVICE WORKER ---
-    const manifestData = {
-      name: "Pitis",
-      short_name: "Pitis",
-      start_url: "./",
-      scope: "./",
-      display: "standalone",
-      background_color: "#f3f4f6",
-      theme_color: "#4f46e5",
-      icons: [
-        {
-          src: APP_ICON_URL,
-          sizes: "192x192",
-          type: "image/png",
-          purpose: "any maskable"
-        },
-        {
-          src: APP_ICON_URL,
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "any maskable"
-        }
-      ]
-    };
-
-    // Inject Manifest Dynamic
-    const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
-    document.getElementById('manifest-placeholder').setAttribute('href', URL.createObjectURL(manifestBlob));
-
-    // Register Service Worker PWA
+    // Register Service Worker Resmi (sw.js)
     if ('serviceWorker' in navigator) {
-      const swCode = `
-        const CACHE_NAME = 'pitis-v1';
-        self.addEventListener('install', (event) => {
-          self.skipWaiting();
-        });
-        self.addEventListener('activate', (event) => {
-          event.waitUntil(clients.claim());
-        });
-        self.addEventListener('fetch', (event) => {
-          event.respondWith(
-            fetch(event.request).catch(() => caches.match(event.request))
-          );
-        });
-      `;
-      const swBlob = new Blob([swCode], { type: 'application/javascript' });
-      navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+      navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW reg error:', err));
     }
 
     // --- KONFIGURASI SUPABASE ---

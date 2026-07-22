@@ -309,7 +309,7 @@
       });
     }
 
-    // --- FITUR IMPORT CSV GOOGLE SHEETS ---
+    // --- FITUR IMPORT CSV GOOGLE SHEETS (FIXED LOGIC) ---
     function handleImportCSV() {
       if (!currentUser) {
         alert("Harap login dulu sebagai pemilik untuk bisa mengimpor data!");
@@ -332,45 +332,73 @@
           let newRecords = [];
 
           rows.forEach(row => {
-            // Ambil nama kolom secara fleksibel
-            const date = row['Tanggal'] || row['tanggal'] || row['date'] || row['Date'];
-            const typeRaw = row['Tipe'] || row['tipe'] || row['type'] || row['Type'] || 'pengeluaran';
-            const amountRaw = row['Nominal'] || row['nominal'] || row['amount'] || row['Amount'];
+            // Ambil data dari header kolom yang bervariasi
+            const rawDate = row['Tanggal'] || row['tanggal'] || row['date'] || row['Date'];
+            const rawType = row['Tipe'] || row['tipe'] || row['type'] || row['Type'] || '';
+            const rawAmount = row['Nominal'] || row['nominal'] || row['amount'] || row['Amount'];
             const desc = row['Keterangan'] || row['keterangan'] || row['description'] || row['Description'] || 'Import CSV';
 
-            if (date && amountRaw) {
-              const amount = Number(amountRaw.toString().replace(/[^0-9]/g, ''));
-              const type = typeRaw.toString().toLowerCase().includes('masuk') ? 'pemasukan' : 'pengeluaran';
+            if (rawDate && rawAmount) {
+              // 1. Bersihkan Nominal Angka
+              const amount = Number(rawAmount.toString().replace(/[^0-9]/g, ''));
 
-              newRecords.push({
-                user_id: currentUser.id,
-                date: date.trim(),
-                type: type,
-                amount: amount,
-                description: desc.trim()
-              });
+              // 2. Logika Penentu Tipe (Lebih Fleksibel & Akurat)
+              const typeStr = rawType.toString().trim().toLowerCase();
+              let type = 'pengeluaran'; // default
+              
+              if (
+                typeStr.includes('pemasukan') || 
+                typeStr.includes('masuk') || 
+                typeStr.includes('income') || 
+                typeStr.includes('in') ||
+                typeStr === 'debit'
+              ) {
+                type = 'pemasukan';
+              }
+
+              // 3. Convert Format Tanggal DD/MM/YYYY ke YYYY-MM-DD
+              let formattedDate = rawDate.trim();
+              if (formattedDate.includes('/')) {
+                const parts = formattedDate.split('/');
+                if (parts.length === 3) {
+                  // Jika format 01/06/2026 -> jadi 2026-06-01
+                  const day = parts[0].padStart(2, '0');
+                  const month = parts[1].padStart(2, '0');
+                  const year = parts[2];
+                  formattedDate = `${year}-${month}-${day}`;
+                }
+              }
+
+              if (amount > 0) {
+                newRecords.push({
+                  user_id: currentUser.id,
+                  date: formattedDate,
+                  type: type,
+                  amount: amount,
+                  description: desc.trim()
+                });
+              }
             }
           });
 
           if (newRecords.length === 0) {
-            alert("Gagal membaca data! Pastikan nama header kolom di spreadsheet kamu: Tanggal, Tipe, Nominal, Keterangan.");
+            alert("Gagal membaca data! Pastikan header kolom di CSV: Tanggal, Tipe, Nominal, Keterangan.");
             return;
           }
 
-          // Upload batch ke Supabase
+          // Kirim ke Supabase
           const { error } = await supabaseClient.from('transactions').insert(newRecords);
 
           if (error) {
             alert("Error saat impor ke Supabase: " + error.message);
           } else {
-            alert(`Berhasil mengimpor ${newRecords.length} catatan transaksi dari Google Sheets!`);
+            alert(`Berhasil mengimpor ${newRecords.length} catatan! Pemasukan & pengeluaran sudah sesuai.`);
             fileInput.value = '';
             renderApp();
           }
         }
       });
     }
-
     async function handleSaveTx(e) {
       e.preventDefault();
       

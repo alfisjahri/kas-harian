@@ -53,9 +53,16 @@
 
     <!-- Ringkasan Keuangan & Panel Filter Advance -->
     <section class="bg-white p-4 rounded-xl shadow space-y-3">
-      <div class="space-y-2 border-b pb-3">
+      
+      <!-- KARTU SISA KAS / SALDO GLOBAL (AKUMULASI SEPANJANG MASA) -->
+      <div id="card-sisa-kas" class="bg-indigo-50 p-3.5 rounded-xl border border-indigo-100 text-center shadow-sm">
+        <span class="text-xs text-indigo-600 font-semibold uppercase tracking-wider block mb-0.5">💰 Total Saldo Kas Saat Ini (Global)</span>
+        <p id="stat-sisa" class="text-2xl font-black text-indigo-700">Rp 0</p>
+      </div>
+
+      <div class="space-y-2 border-t border-b py-3">
         <div class="flex justify-between items-center">
-          <h2 class="font-bold text-gray-700">Ringkasan</h2>
+          <h2 class="font-bold text-gray-700">Filter Rekapan</h2>
           <select id="filter-type" class="text-xs bg-gray-100 p-1.5 rounded-md font-semibold border border-gray-300">
             <option value="month" selected>Per Bulan</option>
             <option value="quarter">Per Kuartal (Q1 - Q4)</option>
@@ -110,19 +117,13 @@
         </div>
       </div>
 
-      <!-- KARTU SISA KAS / SALDO -->
-      <div id="card-sisa-kas" class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-center">
-        <span class="text-xs text-indigo-600 font-semibold uppercase tracking-wider">Sisa Uang / Saldo Kas</span>
-        <p id="stat-sisa" class="text-2xl font-black text-indigo-700">Rp 0</p>
-      </div>
-
       <div class="grid grid-cols-2 gap-2 text-center">
         <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
-          <span class="text-xs text-emerald-600 font-medium">Pemasukan</span>
+          <span class="text-xs text-emerald-600 font-medium">Pemasukan Periode Ini</span>
           <p id="stat-pemasukan" class="text-lg font-bold text-emerald-700">Rp 0</p>
         </div>
         <div class="bg-rose-50 p-3 rounded-lg border border-rose-100">
-          <span class="text-xs text-rose-600 font-medium">Pengeluaran</span>
+          <span class="text-xs text-rose-600 font-medium">Pengeluaran Periode Ini</span>
           <p id="stat-pengeluaran" class="text-lg font-bold text-rose-700">Rp 0</p>
         </div>
       </div>
@@ -212,7 +213,7 @@
 
   <!-- SINGLE SCRIPT -->
   <script>
-    // --- KONFIGURASI SUPABASE (SUDAH DILENGKAPI KUNCI ASLI) ---
+    // --- KONFIGURASI SUPABASE ---
     const SUPABASE_URL = "https://sgxztlpxabehtnemksvr.supabase.co"; 
     const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e";
 
@@ -338,7 +339,7 @@
       renderApp();
     }
 
-    // --- RENDER & REKAPAN KALKULASI SISA KAS ---
+    // --- RENDER & LOGIKA REKAPAN SISA KAS GLOBAL ---
     async function renderApp() {
       let transactions = [];
 
@@ -354,33 +355,45 @@
         transactions = dummyTransactions;
       }
 
-      const filtered = getFilteredData(transactions);
+      // 1. HITUNG SALDO KAS GLOBAL (DARI SELURUH DATA DARI AWAL BIKIN AKUN / TANPA TERFILTER)
+      let globalMasuk = 0;
+      let globalKeluar = 0;
 
-      let totalMasuk = 0;
-      let totalKeluar = 0;
-
-      filtered.forEach(t => {
-        if (t.type === 'pemasukan') totalMasuk += Number(t.amount);
-        else totalKeluar += Number(t.amount);
+      transactions.forEach(t => {
+        if (t.type === 'pemasukan') globalMasuk += Number(t.amount);
+        else globalKeluar += Number(t.amount);
       });
 
-      const sisaKas = totalMasuk - totalKeluar;
+      const totalSisaKasGlobal = globalMasuk - globalKeluar;
 
+      // Update Tampilan Saldo Kas Global
       const statSisaEl = document.getElementById('stat-sisa');
       const cardSisaEl = document.getElementById('card-sisa-kas');
-      statSisaEl.innerText = formatRp(sisaKas);
+      statSisaEl.innerText = formatRp(totalSisaKasGlobal);
 
-      if (sisaKas < 0) {
-        cardSisaEl.className = "bg-rose-50 p-3 rounded-lg border border-rose-200 text-center";
+      if (totalSisaKasGlobal < 0) {
+        cardSisaEl.className = "bg-rose-50 p-3.5 rounded-xl border border-rose-200 text-center shadow-sm";
         statSisaEl.className = "text-2xl font-black text-rose-700";
       } else {
-        cardSisaEl.className = "bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-center";
+        cardSisaEl.className = "bg-indigo-50 p-3.5 rounded-xl border border-indigo-100 text-center shadow-sm";
         statSisaEl.className = "text-2xl font-black text-indigo-700";
       }
 
-      document.getElementById('stat-pemasukan').innerText = formatRp(totalMasuk);
-      document.getElementById('stat-pengeluaran').innerText = formatRp(totalKeluar);
+      // 2. HITUNG REKAPAN PERIODE TERFILTER (SESUAI BULAN / PERIODE DILIHAT)
+      const filtered = getFilteredData(transactions);
 
+      let totalMasukPeriode = 0;
+      let totalKeluarPeriode = 0;
+
+      filtered.forEach(t => {
+        if (t.type === 'pemasukan') totalMasukPeriode += Number(t.amount);
+        else totalKeluarPeriode += Number(t.amount);
+      });
+
+      document.getElementById('stat-pemasukan').innerText = formatRp(totalMasukPeriode);
+      document.getElementById('stat-pengeluaran').innerText = formatRp(totalKeluarPeriode);
+
+      // Render Riwayat Transaksi
       const listContainer = document.getElementById('tx-list');
       listContainer.innerHTML = '';
 

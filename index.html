@@ -64,7 +64,7 @@
           </select>
         </div>
 
-        <!-- Opsi Filter Ditingkatkan (Dynamic UI) -->
+        <!-- Opsi Filter Dynamic UI -->
         <div id="filter-controls" class="space-y-2 pt-1">
           
           <!-- Mode Per Bulan -->
@@ -108,6 +108,12 @@
           </div>
 
         </div>
+      </div>
+
+      <!-- KARTU SISA KAS / SALDO -->
+      <div id="card-sisa-kas" class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-center">
+        <span class="text-xs text-indigo-600 font-semibold uppercase tracking-wider">Sisa Uang / Saldo Kas</span>
+        <p id="stat-sisa" class="text-2xl font-black text-indigo-700">Rp 0</p>
       </div>
 
       <div class="grid grid-cols-2 gap-2 text-center">
@@ -204,9 +210,9 @@
     </div>
   </div>
 
-  <!-- SINGLE SCRIPT (ADVANCE FILTERING) -->
+  <!-- SINGLE SCRIPT -->
   <script>
-    // --- KONFIGURASI SUPABASE ---
+    // --- KONFIGURASI SUPABASE (SUDAH DILENGKAPI KUNCI ASLI) ---
     const SUPABASE_URL = "https://sgxztlpxabehtnemksvr.supabase.co"; 
     const SUPABASE_ANON_KEY = "sb_publishable_giXNuTZ9oHeErW7EuUyq7w_87eXiw6e";
 
@@ -261,12 +267,10 @@
         }
       });
 
-      // Default set picker month ke Bulan Ini
       const today = new Date();
       const currentYM = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
       document.getElementById('picker-month').value = currentYM;
 
-      // Event Listeners UI Toggle Filter
       document.getElementById('filter-type').addEventListener('change', handleFilterTypeChange);
       document.getElementById('picker-submonth').addEventListener('change', (e) => {
         const dayPicker = document.getElementById('picker-specific-day');
@@ -275,7 +279,6 @@
         renderApp();
       });
 
-      // Trigger Render on Change
       ['picker-month', 'picker-specific-day', 'picker-quarter-year', 'picker-quarter-q', 
        'picker-semester-year', 'picker-semester-s', 'picker-year-only'].forEach(id => {
         document.getElementById(id).addEventListener('change', renderApp);
@@ -335,7 +338,7 @@
       renderApp();
     }
 
-    // --- RENDER & LOGIKA FILTERING CANGGIH ---
+    // --- RENDER & REKAPAN KALKULASI SISA KAS ---
     async function renderApp() {
       let transactions = [];
 
@@ -360,6 +363,20 @@
         if (t.type === 'pemasukan') totalMasuk += Number(t.amount);
         else totalKeluar += Number(t.amount);
       });
+
+      const sisaKas = totalMasuk - totalKeluar;
+
+      const statSisaEl = document.getElementById('stat-sisa');
+      const cardSisaEl = document.getElementById('card-sisa-kas');
+      statSisaEl.innerText = formatRp(sisaKas);
+
+      if (sisaKas < 0) {
+        cardSisaEl.className = "bg-rose-50 p-3 rounded-lg border border-rose-200 text-center";
+        statSisaEl.className = "text-2xl font-black text-rose-700";
+      } else {
+        cardSisaEl.className = "bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-center";
+        statSisaEl.className = "text-2xl font-black text-indigo-700";
+      }
 
       document.getElementById('stat-pemasukan').innerText = formatRp(totalMasuk);
       document.getElementById('stat-pengeluaran').innerText = formatRp(totalKeluar);
@@ -401,18 +418,16 @@
       return data.filter(t => {
         const tDate = new Date(t.date);
         const year = tDate.getFullYear();
-        const month = tDate.getMonth() + 1; // 1-12
+        const month = tDate.getMonth() + 1;
         const dateNum = tDate.getDate();
 
         if (mode === 'month') {
-          const ymVal = document.getElementById('picker-month').value; // YYYY-MM
+          const ymVal = document.getElementById('picker-month').value;
           if (!ymVal) return true;
           const [targetY, targetM] = ymVal.split('-').map(Number);
 
-          // Cek kesesuaian Bulan & Tahun
           if (year !== targetY || month !== targetM) return false;
 
-          // Cek Sub-filter (Mingguan / Harian)
           const sub = document.getElementById('picker-submonth').value;
           if (sub === 'w1') return dateNum >= 1 && dateNum <= 7;
           if (sub === 'w2') return dateNum >= 8 && dateNum <= 14;
@@ -422,7 +437,7 @@
             const dayVal = document.getElementById('picker-specific-day').value;
             return dayVal ? t.date === dayVal : true;
           }
-          return true; // Full 1 Bulan
+          return true;
 
         } else if (mode === 'quarter') {
           const qYear = Number(document.getElementById('picker-quarter-year').value);

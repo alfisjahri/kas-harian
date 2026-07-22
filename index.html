@@ -20,7 +20,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS Client via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- PapaParse Library via CDN (Untuk Baca File CSV dari Google Sheets) -->
+  <!-- PapaParse Library via CDN (Untuk Baca File CSV Google Sheets) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-16">
@@ -156,7 +156,7 @@
     </div>
   </div>
 
-  <!-- SINGLE SCRIPT -->
+  <!-- SINGLE SCRIPT (CLEAN & AKURAT) -->
   <script>
     // --- KONFIGURASI SUPABASE ---
     const SUPABASE_URL = "https://sgxztlpxabehtnemksvr.supabase.co"; 
@@ -309,7 +309,7 @@
       });
     }
 
-    // --- FITUR IMPORT CSV GOOGLE SHEETS (FIXED LOGIC) ---
+    // --- IMPORT CSV GOOGLE SHEETS (LOGIKA DIBERSIHKAN TOTAL) ---
     function handleImportCSV() {
       if (!currentUser) {
         alert("Harap login dulu sebagai pemilik untuk bisa mengimpor data!");
@@ -327,44 +327,54 @@
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
+        transformHeader: function(h) {
+          // Bersihkan header dari spasi & BOM character
+          return h.replace(/^\ufeff/, '').trim().toLowerCase();
+        },
         complete: async function(results) {
           const rows = results.data;
           let newRecords = [];
 
-          rows.forEach(row => {
-            // Ambil data dari header kolom yang bervariasi
-            const rawDate = row['Tanggal'] || row['tanggal'] || row['date'] || row['Date'];
-            const rawType = row['Tipe'] || row['tipe'] || row['type'] || row['Type'] || '';
-            const rawAmount = row['Nominal'] || row['nominal'] || row['amount'] || row['Amount'];
-            const desc = row['Keterangan'] || row['keterangan'] || row['description'] || row['Description'] || 'Import CSV';
+          rows.forEach((row) => {
+            const keys = Object.keys(row);
+            
+            // Cari nama kolom dinamis
+            const dateKey = keys.find(k => k.includes('tanggal') || k.includes('date'));
+            const typeKey = keys.find(k => k.includes('tipe') || k.includes('type') || k.includes('jenis'));
+            const amountKey = keys.find(k => k.includes('nominal') || k.includes('amount') || k.includes('jumlah'));
+            const descKey = keys.find(k => k.includes('keterangan') || k.includes('desc') || k.includes('catatan'));
+
+            const rawDate = dateKey ? row[dateKey] : null;
+            const rawType = typeKey ? row[typeKey] : '';
+            const rawAmount = amountKey ? row[amountKey] : null;
+            const desc = descKey && row[descKey] ? row[descKey] : 'Import CSV';
 
             if (rawDate && rawAmount) {
-              // 1. Bersihkan Nominal Angka
+              // 1. Bersihkan Angka Nominal
               const amount = Number(rawAmount.toString().replace(/[^0-9]/g, ''));
 
-              // 2. Logika Penentu Tipe (Lebih Fleksibel & Akurat)
+              // 2. Deteksi Tipe (Pemasukan vs Pengeluaran)
               const typeStr = rawType.toString().trim().toLowerCase();
-              let type = 'pengeluaran'; // default
-              
-              if (
-                typeStr.includes('pemasukan') || 
+              const isPemasukan = 
                 typeStr.includes('masuk') || 
+                typeStr.includes('pemasukan') || 
                 typeStr.includes('income') || 
-                typeStr.includes('in') ||
-                typeStr === 'debit'
-              ) {
-                type = 'pemasukan';
-              }
+                typeStr.includes('in') || 
+                typeStr.includes('debit') ||
+                typeStr.includes('kredit') ||
+                typeStr === 'p' || 
+                typeStr === '+';
 
-              // 3. Convert Format Tanggal DD/MM/YYYY ke YYYY-MM-DD
-              let formattedDate = rawDate.trim();
+              const finalType = isPemasukan ? 'pemasukan' : 'pengeluaran';
+
+              // 3. Format Tanggal ke YYYY-MM-DD
+              let formattedDate = rawDate.toString().trim();
               if (formattedDate.includes('/')) {
                 const parts = formattedDate.split('/');
                 if (parts.length === 3) {
-                  // Jika format 01/06/2026 -> jadi 2026-06-01
                   const day = parts[0].padStart(2, '0');
                   const month = parts[1].padStart(2, '0');
-                  const year = parts[2];
+                  const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
                   formattedDate = `${year}-${month}-${day}`;
                 }
               }
@@ -373,16 +383,16 @@
                 newRecords.push({
                   user_id: currentUser.id,
                   date: formattedDate,
-                  type: type,
+                  type: finalType,
                   amount: amount,
-                  description: desc.trim()
+                  description: desc.toString().trim()
                 });
               }
             }
           });
 
           if (newRecords.length === 0) {
-            alert("Gagal membaca data! Pastikan header kolom di CSV: Tanggal, Tipe, Nominal, Keterangan.");
+            alert("Gagal membaca CSV! Pastikan header kolom di file kamu ada kata: Tanggal, Tipe, Nominal, Keterangan.");
             return;
           }
 
@@ -390,15 +400,16 @@
           const { error } = await supabaseClient.from('transactions').insert(newRecords);
 
           if (error) {
-            alert("Error saat impor ke Supabase: " + error.message);
+            alert("Error Supabase: " + error.message);
           } else {
-            alert(`Berhasil mengimpor ${newRecords.length} catatan! Pemasukan & pengeluaran sudah sesuai.`);
+            alert(`Selesai! ${newRecords.length} transaksi berhasil diimpor. Pemasukan & Pengeluaran sudah pas!`);
             fileInput.value = '';
             renderApp();
           }
         }
       });
     }
+
     async function handleSaveTx(e) {
       e.preventDefault();
       

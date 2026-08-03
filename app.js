@@ -1,3 +1,4 @@
+import './style.css';
 import { createClient } from '@supabase/supabase-js';
 
 // --- SERVICE WORKER REGISTRATION ---

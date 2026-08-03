@@ -6,80 +6,95 @@
   <title>Pitis - Catat Keuangan Privat</title>
 
   <!-- PWA Meta Tags -->
-  <meta name="theme-color" content="#f3f4f6">
-  <meta name="description" content="Aplikasi Catat Pitis / Keuangan Privat">
+  <meta name="theme-color" content="#090d16">
+  <meta name="description" content="Aplikasi Catat Pitis / Keuangan Privat Super Cepat &amp; Hemat RAM">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Pitis">
   <link rel="apple-touch-icon" href="./icon.png">
 
-  <!-- Link ke Manifest Fisik -->
+  <!-- Manifest Fisik -->
   <link rel="manifest" href="./manifest.json">
 
-  <!-- Tailwind CSS via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS Client via CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- PapaParse Library via CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- Static Compiled CSS (Super Cepat, Tanpa JIT CDN JS Engine) -->
+  <link rel="stylesheet" href="/style.css">
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans min-h-screen pb-16 select-none">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen pb-20 select-none">
 
-  <!-- Header & Mode Banner -->
-  <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
-    <div>
-      <h1 class="text-xl font-bold flex items-center gap-1.5">💰 Pitis</h1>
-      <p id="user-status" class="text-xs text-indigo-200">Mode Demo (Data tidak tersimpan)</p>
+  <!-- Header Sticky Dashboard -->
+  <header class="bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/80 p-4 sticky top-0 z-30 flex justify-between items-center shadow-lg shadow-black/30">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-lg shadow-md shadow-indigo-500/20">
+        💰
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+          Pitis
+          <span class="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">v2.0</span>
+        </h1>
+        <p id="user-status" class="text-xs text-slate-400 font-medium">Mode Demo (Data tidak tersimpan)</p>
+      </div>
     </div>
-    <div id="auth-btn-container">
-      <button id="btn-login-trigger" type="button" class="bg-white text-indigo-600 px-3 py-1.5 rounded-lg text-sm font-semibold shadow hover:bg-indigo-50 active:scale-95 transition">
+
+    <div id="auth-btn-container" class="flex items-center gap-2">
+      <button id="btn-login-trigger" type="button" class="btn-primary py-1.5 px-3 text-xs">
         Login
       </button>
-      <button id="btn-logout" type="button" class="hidden bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-600 transition">
+      <button id="btn-logout" type="button" class="hidden btn-danger py-1.5 px-3">
         Logout
       </button>
     </div>
   </header>
 
-  <main class="max-w-md mx-auto p-4 space-y-3">
+  <main class="max-w-md mx-auto p-3.5 space-y-3.5 mt-1">
 
     <!-- Banner Demo Alert -->
-    <div id="demo-banner" class="bg-amber-50 border border-amber-200 p-3 rounded-xl flex justify-between items-center text-xs text-amber-800">
-      <span>Kamu berada di mode demo pratinjau.</span>
-      <button id="btn-login-banner" type="button" class="font-bold underline text-indigo-600 hover:text-indigo-800">
-        Klik Login
+    <div id="demo-banner" class="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl flex justify-between items-center text-xs text-amber-300 backdrop-blur-sm">
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+        Mode Pratinjau Demo
+      </span>
+      <button id="btn-login-banner" type="button" class="font-bold underline text-indigo-400 hover:text-indigo-300 transition">
+        Login Pemilik
       </button>
     </div>
 
-    <!-- 1. ACCORDION: SISA PITIS (AUTO-HIDE DROPDOWN) -->
-    <section class="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
-      <button type="button" id="btn-toggle-pitis-acc" class="w-full p-4 flex justify-between items-center font-bold text-gray-700 hover:bg-gray-50 transition">
-        <span class="flex items-center gap-2">💰 Sisa Pitis</span>
-        <span id="pitis-acc-arrow" class="text-xs transition-transform duration-200 transform">▼</span>
+    <!-- 1. ACCORDION: SISA PITIS -->
+    <section class="glass-card overflow-hidden">
+      <button type="button" id="btn-toggle-pitis-acc" class="w-full p-4 flex justify-between items-center font-bold text-slate-200 hover:bg-slate-800/40 transition-colors">
+        <span class="flex items-center gap-2 text-sm">
+          <span>💰</span> Sisa Pitis (Kas Global)
+        </span>
+        <span id="pitis-acc-arrow" class="text-xs text-slate-400 transition-transform duration-200 transform">▼</span>
       </button>
 
-      <div id="pitis-acc-content" class="hidden p-4 pt-0 border-t bg-white text-center cursor-pointer">
-        <div class="pt-3 pb-1">
-          <p id="stat-sisa" class="text-2xl font-black text-indigo-700">Rp •••••••</p>
-          <p class="text-[10px] text-gray-400 mt-1">(Tekan angka untuk buka/tutup sensor <span id="pitis-eye-icon">👁️</span>)</p>
+      <div id="pitis-acc-content" class="hidden p-4 pt-1 border-t border-slate-800/60 bg-slate-900/40 text-center cursor-pointer">
+        <div class="py-3">
+          <p id="stat-sisa" class="text-2xl font-black text-indigo-400 tracking-tight font-mono">Rp •••••••</p>
+          <p class="text-[11px] text-slate-400 mt-1.5 flex items-center justify-center gap-1">
+            <span>(Tekan angka untuk sensor</span>
+            <span id="pitis-eye-icon">👁️</span>)
+          </p>
         </div>
       </div>
     </section>
 
-    <!-- 2. ACCORDION: REKAPAN & FILTER (AUTO-HIDE DROPDOWN) -->
-    <section class="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
-      <button type="button" id="btn-toggle-summary" class="w-full p-4 flex justify-between items-center font-bold text-gray-700 hover:bg-gray-50 transition">
-        <span class="flex items-center gap-2">📊 Rekapan & Filter</span>
-        <span id="summary-arrow" class="text-xs transition-transform duration-200 transform">▼</span>
+    <!-- 2. ACCORDION: REKAPAN & FILTER -->
+    <section class="glass-card overflow-hidden">
+      <button type="button" id="btn-toggle-summary" class="w-full p-4 flex justify-between items-center font-bold text-slate-200 hover:bg-slate-800/40 transition-colors">
+        <span class="flex items-center gap-2 text-sm">
+          <span>📊</span> Rekapan &amp; Filter Periode
+        </span>
+        <span id="summary-arrow" class="text-xs text-slate-400 transition-transform duration-200 transform">▼</span>
       </button>
 
-      <div id="summary-content" class="hidden p-4 pt-0 border-t space-y-3 bg-white">
+      <div id="summary-content" class="hidden p-4 pt-2 border-t border-slate-800/60 space-y-3 bg-slate-900/40">
         
         <!-- Filter Controls -->
-        <div class="space-y-2 pt-3">
+        <div class="space-y-2.5 pt-1">
           <div class="flex justify-between items-center">
-            <span class="text-xs font-semibold text-gray-500">Periode:</span>
-            <select id="filter-type" class="text-xs bg-gray-100 p-1.5 rounded-md font-semibold border border-gray-300">
+            <span class="text-xs font-semibold text-slate-400">Periode Tampilan:</span>
+            <select id="filter-type" class="text-xs bg-slate-800 border border-slate-700 text-slate-200 p-1.5 rounded-lg font-semibold focus:outline-none focus:border-indigo-500">
               <option value="month" selected>Per Bulan</option>
               <option value="quarter">Per Kuartal (Q1 - Q4)</option>
               <option value="semester">Per Semester (6 Bulan)</option>
@@ -89,21 +104,21 @@
 
           <!-- Dynamic Controls -->
           <div id="ctrl-month" class="flex flex-wrap gap-2 items-center justify-between">
-            <input type="month" id="picker-month" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50">
-            <select id="picker-submonth" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1">
+            <input type="month" id="picker-month" class="text-xs p-1.5 bg-slate-800 border border-slate-700 rounded-lg font-semibold text-slate-200 focus:outline-none focus:border-indigo-500">
+            <select id="picker-submonth" class="text-xs p-1.5 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg font-semibold flex-1 focus:outline-none focus:border-indigo-500">
               <option value="all" selected>Full 1 Bulan Ini</option>
-              <option value="w1">Minggu ke-1 (Tgl 1-7)</option>
-              <option value="w2">Minggu ke-2 (Tgl 8-14)</option>
-              <option value="w3">Minggu ke-3 (Tgl 15-21)</option>
-              <option value="w4">Minggu ke-4 (Tgl 22-End)</option>
-              <option value="custom_day">Pilih Tanggal Spesifik...</option>
+              <option value="w1">Minggu 1 (Tgl 1-7)</option>
+              <option value="w2">Minggu 2 (Tgl 8-14)</option>
+              <option value="w3">Minggu 3 (Tgl 15-21)</option>
+              <option value="w4">Minggu 4 (Tgl 22-End)</option>
+              <option value="custom_day">Tanggal Spesifik...</option>
             </select>
-            <input type="date" id="picker-specific-day" class="hidden text-xs p-1.5 border rounded-md font-semibold bg-gray-50 w-full">
+            <input type="date" id="picker-specific-day" class="hidden text-xs p-1.5 bg-slate-800 border border-slate-700 rounded-lg font-semibold text-slate-200 w-full focus:outline-none focus:border-indigo-500">
           </div>
 
           <div id="ctrl-quarter" class="hidden flex gap-2 items-center justify-between">
-            <select id="picker-quarter-year" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1"></select>
-            <select id="picker-quarter-q" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1">
+            <select id="picker-quarter-year" class="text-xs p-1.5 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg font-semibold flex-1"></select>
+            <select id="picker-quarter-q" class="text-xs p-1.5 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg font-semibold flex-1">
               <option value="q1">Kuartal 1 (Jan - Mar)</option>
               <option value="q2">Kuartal 2 (Apr - Jun)</option>
               <option value="q3">Kuartal 3 (Jul - Sep)</option>
@@ -112,46 +127,52 @@
           </div>
 
           <div id="ctrl-semester" class="hidden flex gap-2 items-center justify-between">
-            <select id="picker-semester-year" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1"></select>
-            <select id="picker-semester-s" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1">
+            <select id="picker-semester-year" class="text-xs p-1.5 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg font-semibold flex-1"></select>
+            <select id="picker-semester-s" class="text-xs p-1.5 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg font-semibold flex-1">
               <option value="s1">Semester 1 (Jan - Jun)</option>
               <option value="s2">Semester 2 (Jul - Des)</option>
             </select>
           </div>
 
           <div id="ctrl-year" class="hidden flex gap-2 items-center justify-between">
-            <label class="text-xs font-medium text-gray-500">Tahun:</label>
-            <select id="picker-year-only" class="text-xs p-1.5 border rounded-md font-semibold bg-gray-50 flex-1"></select>
+            <label class="text-xs font-medium text-slate-400">Tahun:</label>
+            <select id="picker-year-only" class="text-xs p-1.5 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg font-semibold flex-1"></select>
           </div>
         </div>
 
-        <!-- Box Angka -->
+        <!-- Stat Cards -->
         <div class="grid grid-cols-2 gap-2 text-center pt-2">
-          <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
-            <span class="text-xs text-emerald-600 font-semibold block">Pemasukan</span>
-            <p id="stat-pemasukan" class="text-base font-bold text-emerald-700 mt-1">Rp 0</p>
+          <div class="bg-emerald-950/40 p-3 rounded-xl border border-emerald-800/40">
+            <span class="text-xs text-emerald-400 font-semibold block flex items-center justify-center gap-1">
+              <span>📈</span> Pemasukan
+            </span>
+            <p id="stat-pemasukan" class="text-sm sm:text-base font-bold font-mono text-emerald-400 mt-1">Rp 0</p>
           </div>
-          <div class="bg-rose-50 p-3 rounded-lg border border-rose-100">
-            <span class="text-xs text-rose-600 font-semibold block">Pengeluaran</span>
-            <p id="stat-pengeluaran" class="text-base font-bold text-rose-700 mt-1">Rp 0</p>
+          <div class="bg-rose-950/40 p-3 rounded-xl border border-rose-800/40">
+            <span class="text-xs text-rose-400 font-semibold block flex items-center justify-center gap-1">
+              <span>📉</span> Pengeluaran
+            </span>
+            <p id="stat-pengeluaran" class="text-sm sm:text-base font-bold font-mono text-rose-400 mt-1">Rp 0</p>
           </div>
         </div>
 
       </div>
     </section>
 
-    <!-- 3. ACCORDION: IMPORT DATA (AUTO-HIDE DROPDOWN) -->
-    <section class="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
-      <button type="button" id="btn-toggle-import" class="w-full p-4 flex justify-between items-center font-bold text-gray-700 hover:bg-gray-50 transition">
-        <span class="flex items-center gap-2">📑 Import Data (.csv)</span>
-        <span id="import-arrow" class="text-xs transition-transform duration-200 transform">▼</span>
+    <!-- 3. ACCORDION: IMPORT DATA -->
+    <section class="glass-card overflow-hidden">
+      <button type="button" id="btn-toggle-import" class="w-full p-4 flex justify-between items-center font-bold text-slate-200 hover:bg-slate-800/40 transition-colors">
+        <span class="flex items-center gap-2 text-sm">
+          <span>📑</span> Import Data (.csv)
+        </span>
+        <span id="import-arrow" class="text-xs text-slate-400 transition-transform duration-200 transform">▼</span>
       </button>
 
-      <div id="import-content" class="hidden p-4 pt-2 border-t space-y-2 bg-indigo-50/50">
-        <p class="text-xs text-indigo-700">Download Google Sheets kamu sebagai file .CSV, lalu upload di sini:</p>
+      <div id="import-content" class="hidden p-4 pt-2 border-t border-slate-800/60 space-y-2 bg-indigo-950/20">
+        <p class="text-xs text-indigo-300">Upload file CSV Google Sheets / AppSheet kamu di sini:</p>
         <div class="flex gap-2 items-center pt-1">
-          <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
-          <button id="btn-import-csv" type="button" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-indigo-700 shadow">
+          <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
+          <button id="btn-import-csv" type="button" class="btn-primary py-1.5 px-3 text-xs whitespace-nowrap">
             Upload
           </button>
         </div>
@@ -159,74 +180,84 @@
     </section>
 
     <!-- Form Input Transaksi -->
-    <section class="bg-white p-4 rounded-xl shadow">
-      <h2 id="form-title" class="font-bold text-gray-700 mb-3">Tambah Transaksi</h2>
+    <section class="glass-card p-4 space-y-3">
+      <h2 id="form-title" class="font-bold text-slate-100 text-sm flex items-center gap-2">
+        <span>✏️</span> Tambah Transaksi
+      </h2>
       <form id="tx-form" class="space-y-3">
         <input type="hidden" id="tx-id">
 
         <div>
-          <label class="block text-xs text-gray-500 mb-1">Tanggal</label>
-          <input type="date" id="tx-date" required class="w-full p-2 border rounded-lg text-sm bg-gray-50">
+          <label class="block text-xs text-slate-400 mb-1 font-medium">Tanggal</label>
+          <input type="date" id="tx-date" required class="input-field">
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Tipe</label>
-            <select id="tx-type" class="w-full p-2 border rounded-lg text-sm bg-gray-50 font-medium">
+            <label class="block text-xs text-slate-400 mb-1 font-medium">Tipe</label>
+            <select id="tx-type" class="input-field font-medium">
               <option value="pengeluaran">Pengeluaran</option>
               <option value="pemasukan">Pemasukan</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Nominal (Rp)</label>
-            <input type="number" id="tx-amount" required min="1" placeholder="50000" class="w-full p-2 border rounded-lg text-sm bg-gray-50">
+            <label class="block text-xs text-slate-400 mb-1 font-medium">Nominal (Rp)</label>
+            <input type="number" id="tx-amount" required min="1" placeholder="50000" class="input-field font-mono">
           </div>
         </div>
 
         <div>
-          <label class="block text-xs text-gray-500 mb-1">Keterangan</label>
-          <input type="text" id="tx-desc" required placeholder="Contoh: Bensin / Makan / Project" class="w-full p-2 border rounded-lg text-sm bg-gray-50">
+          <label class="block text-xs text-slate-400 mb-1 font-medium">Keterangan</label>
+          <input type="text" id="tx-desc" required placeholder="Contoh: Bensin / Makan / Project" class="input-field">
         </div>
 
-        <div class="flex gap-2">
-          <button type="submit" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold text-sm hover:bg-indigo-700 transition">Simpan</button>
-          <button type="button" id="btn-cancel-edit" class="hidden bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold">Batal</button>
+        <div class="flex gap-2 pt-1">
+          <button type="submit" class="flex-1 btn-primary">Simpan</button>
+          <button type="button" id="btn-cancel-edit" class="hidden btn-secondary">Batal</button>
         </div>
       </form>
     </section>
 
-    <!-- Daftar Catatan -->
-    <section class="bg-white p-4 rounded-xl shadow space-y-3">
+    <!-- Riwayat Transaksi -->
+    <section class="glass-card p-4 space-y-3">
       <div class="flex justify-between items-center">
-        <h2 class="font-bold text-gray-700">Riwayat Transaksi</h2>
-        <button id="btn-export-csv" class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-semibold hover:bg-emerald-200 transition shadow-sm">Export CSV</button>
+        <h2 class="font-bold text-slate-100 text-sm flex items-center gap-2">
+          <span>📜</span> Riwayat Transaksi
+        </h2>
+        <button id="btn-export-csv" class="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-semibold transition-colors flex items-center gap-1">
+          <span>📥</span> Export CSV
+        </button>
       </div>
+
       <div>
-        <input type="text" id="search-tx" placeholder="🔍 Cari transaksi..." class="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <input type="text" id="search-tx" placeholder="🔍 Cari transaksi..." class="input-field">
       </div>
+
       <div id="tx-list" class="space-y-2"></div>
     </section>
 
   </main>
 
   <!-- Modal Login Privat -->
-  <div id="auth-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-6 rounded-xl w-full max-w-sm space-y-4 relative shadow-2xl">
-      <button id="btn-close-modal" type="button" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
-      <h2 class="text-lg font-bold text-gray-800 text-center">Login Pemilik</h2>
-      <p class="text-xs text-gray-400 text-center -mt-2">Masukkan akun terdaftar Supabase</p>
-      
-      <form id="auth-form" class="space-y-3">
+  <div id="auth-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="glass-card p-6 rounded-2xl w-full max-w-sm space-y-4 relative border border-slate-700/80 shadow-2xl">
+      <button id="btn-close-modal" type="button" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-200 text-xl font-bold transition">&times;</button>
+      <div class="text-center space-y-1">
+        <h2 class="text-lg font-bold text-slate-100">Login Pemilik</h2>
+        <p class="text-xs text-slate-400">Masukkan akun terdaftar Supabase</p>
+      </div>
+
+      <form id="auth-form" class="space-y-3.5">
         <div>
-          <label class="block text-xs text-gray-500 mb-1">Email Owner</label>
-          <input type="email" id="auth-email" required class="w-full p-2 border rounded-lg text-sm">
+          <label class="block text-xs text-slate-400 mb-1 font-medium">Email Owner</label>
+          <input type="email" id="auth-email" required class="input-field">
         </div>
         <div>
-          <label class="block text-xs text-gray-500 mb-1">Password</label>
-          <input type="password" id="auth-password" required class="w-full p-2 border rounded-lg text-sm">
+          <label class="block text-xs text-slate-400 mb-1 font-medium">Password</label>
+          <input type="password" id="auth-password" required class="input-field">
         </div>
 
-        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
+        <button type="submit" class="w-full btn-primary mt-2">
           Masuk Aplikasi
         </button>
       </form>
@@ -234,13 +265,13 @@
   </div>
 
   <!-- Custom Confirm Modal -->
-  <div id="confirm-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-white p-6 rounded-xl w-full max-w-sm space-y-4 shadow-2xl text-center">
-      <h2 class="text-lg font-bold text-gray-800">Konfirmasi</h2>
-      <p id="confirm-message" class="text-sm text-gray-600">Yakin ingin melanjutkan?</p>
+  <div id="confirm-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="glass-card p-6 rounded-2xl w-full max-w-sm space-y-4 border border-slate-700/80 shadow-2xl text-center">
+      <h2 class="text-lg font-bold text-slate-100">Konfirmasi</h2>
+      <p id="confirm-message" class="text-sm text-slate-300">Yakin ingin melanjutkan?</p>
       <div class="flex gap-2 justify-center pt-2">
-        <button id="btn-confirm-cancel" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-semibold hover:bg-gray-300 transition">Batal</button>
-        <button id="btn-confirm-ok" class="flex-1 bg-rose-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-rose-700 transition">Hapus</button>
+        <button id="btn-confirm-cancel" class="flex-1 btn-secondary py-2 text-sm">Batal</button>
+        <button id="btn-confirm-ok" class="flex-1 btn-danger py-2 text-sm">Hapus</button>
       </div>
     </div>
   </div>
@@ -248,7 +279,7 @@
   <!-- Toast Container -->
   <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-11/12 max-w-sm pointer-events-none"></div>
 
-  <!-- SINGLE SCRIPT -->
+  <!-- MAIN SCRIPT MODULE -->
   <script type="module" src="/app.js"></script>
 </body>
 </html>

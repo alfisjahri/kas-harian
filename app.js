@@ -9,8 +9,16 @@ if ('serviceWorker' in navigator) {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || ''; 
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-const supabaseClient = (SUPABASE_URL && SUPABASE_ANON_KEY) 
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+const isValidSupabaseConfig = 
+  SUPABASE_URL && 
+  SUPABASE_ANON_KEY && 
+  !SUPABASE_URL.includes('your-project') &&
+  SUPABASE_URL.startsWith('http');
+
+const supabaseClient = isValidSupabaseConfig
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    }) 
   : null;
 
 let dummyTransactions = [
@@ -27,6 +35,15 @@ let isLocked = false;
 let isPitisHidden = true;
 let cachedSisaPitisFormatted = "Rp 0";
 
+// --- UTILITY: DEBOUNCE ---
+function debounce(fn, delay = 150) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
 // --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', async () => {
   const dateInput = document.getElementById('tx-date');
@@ -36,24 +53,24 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-toggle-pitis-acc')?.addEventListener('click', () => {
     const content = document.getElementById('pitis-acc-content');
     const arrow = document.getElementById('pitis-acc-arrow');
-    content.classList.toggle('hidden');
-    arrow.classList.toggle('rotate-180');
+    content?.classList.toggle('hidden');
+    arrow?.classList.toggle('rotate-180');
   });
 
   // Accordion 2: Rekapan & Filter
   document.getElementById('btn-toggle-summary')?.addEventListener('click', () => {
     const content = document.getElementById('summary-content');
     const arrow = document.getElementById('summary-arrow');
-    content.classList.toggle('hidden');
-    arrow.classList.toggle('rotate-180');
+    content?.classList.toggle('hidden');
+    arrow?.classList.toggle('rotate-180');
   });
 
   // Accordion 3: Import CSV
   document.getElementById('btn-toggle-import')?.addEventListener('click', () => {
     const content = document.getElementById('import-content');
     const arrow = document.getElementById('import-arrow');
-    content.classList.toggle('hidden');
-    arrow.classList.toggle('rotate-180');
+    content?.classList.toggle('hidden');
+    arrow?.classList.toggle('rotate-180');
   });
 
   // Toggle Sensor Angka Pitis
@@ -98,7 +115,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
   document.getElementById('btn-cancel-edit')?.addEventListener('click', resetForm);
   document.getElementById('btn-import-csv')?.addEventListener('click', handleImportCSV);
-  document.getElementById('search-tx')?.addEventListener('input', renderFilteredList);
+  
+  // Debounced Search Input (Mencegah Spaming Re-render RAM)
+  const searchInput = document.getElementById('search-tx');
+  if (searchInput) {
+    searchInput.addEventListener('input', debounce(renderFilteredList, 150));
+  }
+
   document.getElementById('btn-export-csv')?.addEventListener('click', handleExportCSV);
 
   document.getElementById('tx-form')?.addEventListener('submit', handleSaveTx);
@@ -197,7 +220,7 @@ async function loadTransactions() {
   renderFilteredList();
 }
 
-// --- RENDER FILTERED LIST (Tanpa Network Query / Pure In-Memory) ---
+// --- RENDER FILTERED LIST (DocumentFragment for Low Memory & Fast DOM Render) ---
 function renderFilteredList() {
   const transactions = currentUser ? realTransactions : dummyTransactions;
 
@@ -232,7 +255,7 @@ function renderFilteredList() {
   if (statPemasukan) statPemasukan.innerText = formatRp(totalMasukPeriode);
   if (statPengeluaran) statPengeluaran.innerText = formatRp(totalKeluarPeriode);
 
-  // 3. RENDER RIWAYAT (Optimal String Construction)
+  // 3. RENDER RIWAYAT (DocumentFragment Optimization)
   const listContainer = document.getElementById('tx-list');
   if (!listContainer) return;
 
@@ -241,30 +264,33 @@ function renderFilteredList() {
     return;
   }
 
-  let html = '';
+  const fragment = document.createDocumentFragment();
+
   for (let i = 0; i < filtered.length; i++) {
     const t = filtered[i];
     const isIncome = t.type === 'pemasukan';
 
-    html += `
-      <div class="flex justify-between items-center p-3 border border-slate-800/80 rounded-xl bg-slate-900/60 backdrop-blur-sm text-sm hover:border-slate-700/80 transition-colors">
-        <div class="space-y-0.5">
-          <p class="font-semibold text-slate-100">${escapeHtml(t.description)}</p>
-          <p class="text-xs text-slate-400 font-mono">${t.date}</p>
-        </div>
-        <div class="text-right">
-          <p class="font-bold font-mono ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
-            ${isIncome ? '+' : '-'} ${formatRp(t.amount)}
-          </p>
-          <div class="space-x-2 text-xs mt-1">
-            <button data-action="edit" data-id="${t.id}" class="text-indigo-400 hover:text-indigo-300 font-medium">Edit</button>
-            <button data-action="delete" data-id="${t.id}" class="text-rose-400 hover:text-rose-300 font-medium">Hapus</button>
-          </div>
+    const card = document.createElement('div');
+    card.className = 'flex justify-between items-center p-3 border border-slate-800/80 rounded-xl bg-slate-900/60 backdrop-blur-sm text-sm hover:border-slate-700/80 transition-colors';
+    card.innerHTML = `
+      <div class="space-y-0.5">
+        <p class="font-semibold text-slate-100">${escapeHtml(t.description)}</p>
+        <p class="text-xs text-slate-400 font-mono">${t.date}</p>
+      </div>
+      <div class="text-right">
+        <p class="font-bold font-mono ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
+          ${isIncome ? '+' : '-'} ${formatRp(t.amount)}
+        </p>
+        <div class="space-x-2 text-xs mt-1">
+          <button data-action="edit" data-id="${t.id}" class="text-indigo-400 hover:text-indigo-300 font-medium">Edit</button>
+          <button data-action="delete" data-id="${t.id}" class="text-rose-400 hover:text-rose-300 font-medium">Hapus</button>
         </div>
       </div>
     `;
+    fragment.appendChild(card);
   }
-  listContainer.innerHTML = html;
+
+  listContainer.replaceChildren(fragment);
 }
 
 function getFilteredData(data) {

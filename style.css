@@ -12,30 +12,32 @@
   }
 }
 
-/* Glassmorphism utility card */
-.glass-card {
-  @apply bg-slate-900/75 backdrop-blur-md border border-slate-800/80 rounded-2xl shadow-xl shadow-black/20;
-}
+@layer components {
+  /* Glassmorphism utility card */
+  .glass-card {
+    @apply bg-slate-900/75 backdrop-blur-md border border-slate-800/80 rounded-2xl shadow-xl shadow-black/20;
+  }
 
-.glass-card-sm {
-  @apply bg-slate-900/60 backdrop-blur-sm border border-slate-800/60 rounded-xl;
-}
+  .glass-card-sm {
+    @apply bg-slate-900/60 backdrop-blur-sm border border-slate-800/60 rounded-xl;
+  }
 
-/* Form input styles */
-.input-field {
-  @apply w-full p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-150;
-}
+  /* Form input styles */
+  .input-field {
+    @apply w-full p-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-150;
+  }
 
-.btn-primary {
-  @apply bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg shadow-indigo-600/25 transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none;
-}
+  .btn-primary {
+    @apply bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-lg shadow-indigo-600/25 transition-all duration-150 inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none;
+  }
 
-.btn-secondary {
-  @apply bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-700/60 transition-all duration-150;
-}
+  .btn-secondary {
+    @apply bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-700/60 transition-all duration-150 inline-flex items-center justify-center gap-1.5;
+  }
 
-.btn-danger {
-  @apply bg-rose-600 hover:bg-rose-500 active:scale-[0.98] text-white px-3 py-2 rounded-xl text-xs font-semibold shadow-md shadow-rose-600/20 transition-all duration-150;
+  .btn-danger {
+    @apply bg-rose-600 hover:bg-rose-500 active:scale-[0.98] text-white px-3 py-2 rounded-xl text-xs font-semibold shadow-md shadow-rose-600/20 transition-all duration-150 inline-flex items-center justify-center gap-1.5;
+  }
 }
 
 /* Custom scrollbars */

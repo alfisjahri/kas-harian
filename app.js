@@ -293,20 +293,20 @@ function updateCloudStatusUI() {
 
   if (config.provider === 'gas' && config.gasUrl) {
     if (statusEl) {
-      statusEl.innerHTML = `<span>📊</span> Google Sheets`;
-      statusEl.className = "text-xs text-indigo-600 dark:text-indigo-400 font-medium truncate flex items-center gap-1";
+      statusEl.innerText = "Google Sheets";
+      statusEl.className = "text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold truncate";
     }
     banner?.classList.add('hidden');
   } else if (config.provider === 'supabase' && config.supabaseUrl) {
     if (statusEl) {
-      statusEl.innerHTML = `<span>⚡</span> Supabase Cloud`;
-      statusEl.className = "text-xs text-emerald-600 dark:text-emerald-400 font-medium truncate flex items-center gap-1";
+      statusEl.innerText = "Supabase Cloud";
+      statusEl.className = "text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold truncate";
     }
     banner?.classList.add('hidden');
   } else {
     if (statusEl) {
-      statusEl.innerHTML = `<span>💾</span> Mode Offline (Lokal)`;
-      statusEl.className = "text-xs text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1";
+      statusEl.innerText = "Mode Offline";
+      statusEl.className = "text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate";
     }
     banner?.classList.remove('hidden');
   }
@@ -316,21 +316,18 @@ function updatePitisDisplay() {
   const statSisaEl = document.getElementById('stat-sisa');
   const statPemasukan = document.getElementById('stat-pemasukan');
   const statPengeluaran = document.getElementById('stat-pengeluaran');
-  const svgOpen = document.getElementById('eye-svg-open');
-  const svgClosed = document.getElementById('eye-svg-closed');
+  const eyeLabelEl = document.getElementById('pitis-eye-label');
 
   if (isPitisHidden) {
     if (statSisaEl) statSisaEl.innerText = "Rp •••••••";
     if (statPemasukan) statPemasukan.innerText = "Rp •••••••";
     if (statPengeluaran) statPengeluaran.innerText = "Rp •••••••";
-    svgOpen?.classList.add('hidden');
-    svgClosed?.classList.remove('hidden');
+    if (eyeLabelEl) eyeLabelEl.innerText = "Tampilkan";
   } else {
     if (statSisaEl) statSisaEl.innerText = cachedSisaPitisFormatted;
     if (statPemasukan) statPemasukan.innerText = cachedPemasukanFormatted;
     if (statPengeluaran) statPengeluaran.innerText = cachedPengeluaranFormatted;
-    svgOpen?.classList.remove('hidden');
-    svgClosed?.classList.add('hidden');
+    if (eyeLabelEl) eyeLabelEl.innerText = "Sembunyikan";
   }
 }
 

@@ -22,30 +22,30 @@
 <body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans min-h-screen pb-20">
 
   <!-- Header Sticky Dashboard -->
-  <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/80 p-3.5 sticky top-0 z-30 flex justify-between items-center shadow-md dark:shadow-lg dark:shadow-black/30 transition-colors duration-200">
+  <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/80 p-3.5 sticky top-0 z-30 flex justify-between items-center shadow-sm transition-colors duration-200">
     <div class="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex-shrink-0 flex items-center justify-center text-lg shadow-md shadow-indigo-500/20">
-        💰
+      <div class="w-8 h-8 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white font-black text-sm flex items-center justify-center flex-shrink-0 shadow-sm">
+        P
       </div>
       <div class="min-w-0 flex-1">
-        <h1 class="text-base font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5 leading-tight">
+        <h1 class="text-sm font-bold tracking-tight text-slate-900 dark:text-white leading-none">
           Pitis
         </h1>
-        <p id="user-status" class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1">
-          <span>💾</span> Mode Offline (Lokal)
+        <p id="user-status" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+          Mode Offline
         </p>
       </div>
     </div>
 
-    <div class="flex items-center gap-1.5 flex-shrink-0">
+    <div class="flex items-center gap-2 flex-shrink-0">
       <!-- Button Toggle Mode Terang/Gelap -->
-      <button id="btn-theme-toggle" type="button" class="btn-theme" title="Ubah Tema Mode">
-        <span id="theme-toggle-icon">🌙</span>
+      <button id="btn-theme-toggle" type="button" class="btn-theme p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Ubah Tema">
+        <span id="theme-toggle-icon" class="text-xs">🌙</span>
       </button>
 
       <!-- Button Pengaturan Cloud Database -->
-      <button id="btn-cloud-config" type="button" class="btn-secondary py-1.5 px-2.5 text-xs flex items-center gap-1" title="Pengaturan Database Cloud">
-        <span>⚙️</span> Cloud DB
+      <button id="btn-cloud-config" type="button" class="btn-secondary py-1.5 px-3 text-xs font-medium" title="Pengaturan Database Cloud">
+        Cloud DB
       </button>
     </div>
   </header>
@@ -53,46 +53,37 @@
   <main class="max-w-md mx-auto p-3.5 space-y-3.5 mt-1">
 
     <!-- Banner Info Cloud (Tampil bila menggunakan Mode Offline) -->
-    <div id="cloud-info-banner" class="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-2xl flex justify-between items-center text-xs text-indigo-700 dark:text-indigo-300 backdrop-blur-sm">
-      <span class="flex items-center gap-1.5 min-w-0">
-        <span class="inline-block w-2 h-2 rounded-full bg-indigo-400 animate-pulse flex-shrink-0"></span>
-        <span class="truncate">Database Cloud belum terhubung.</span>
+    <div id="cloud-info-banner" class="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-xl flex justify-between items-center text-xs text-indigo-700 dark:text-indigo-300 backdrop-blur-sm">
+      <span class="flex items-center gap-2 min-w-0">
+        <span class="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse flex-shrink-0"></span>
+        <span class="truncate">Cloud Database belum terhubung.</span>
       </span>
-      <button id="btn-banner-cloud" type="button" class="font-bold underline text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition flex-shrink-0 ml-2">
-        Hubungkan Cloud ⚙️
+      <button id="btn-banner-cloud" type="button" class="font-semibold underline text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition flex-shrink-0 ml-2">
+        Hubungkan
       </button>
     </div>
 
     <!-- 1. INFOCARD: SISA PITIS -->
     <section id="card-sisa-pitis" class="glass-card p-4 sm:p-5 cursor-pointer select-none hover:border-indigo-500/40 transition-colors">
       <div class="flex justify-between items-center mb-1">
-        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>💰</span> Sisa Pitis
+        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          Sisa Pitis
         </span>
-        <button type="button" id="btn-toggle-eye" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors" title="Buka/Tutup Sensor">
-          <svg id="eye-svg-open" class="w-4 h-4 hidden stroke-current fill-none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-          <svg id="eye-svg-closed" class="w-4 h-4 stroke-current fill-none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-            <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-            <line x1="2" x2="22" y1="2" y2="22"/>
-          </svg>
+        <button type="button" id="btn-toggle-eye" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline transition-colors">
+          <span id="pitis-eye-label">Tampilkan</span>
         </button>
       </div>
 
-      <div class="py-0.5">
+      <div class="py-1">
         <p id="stat-sisa" class="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight font-mono">Rp •••••••</p>
       </div>
     </section>
 
     <!-- 2. INFOCARD: STATISTIK -->
-    <section class="glass-card p-4.5 space-y-3.5">
+    <section class="glass-card p-4 sm:p-5 space-y-3.5">
       <div class="flex justify-between items-center">
-        <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
-          <span>📊</span> Statistik
+        <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm">
+          Statistik
         </h2>
 
         <!-- Periode Filter Dropdown -->
@@ -143,16 +134,16 @@
       </div>
 
       <!-- Stat Cards -->
-      <div class="grid grid-cols-2 gap-2 text-center pt-1">
-        <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/40">
-          <span class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold block flex items-center justify-center gap-1">
-            <span>📈</span> Pemasukan
+      <div class="grid grid-cols-2 gap-2.5 text-center pt-1">
+        <div class="bg-emerald-500/5 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-500/20">
+          <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block uppercase tracking-wider">
+            Pemasukan
           </span>
           <p id="stat-pemasukan" class="text-sm sm:text-base font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">Rp •••••••</p>
         </div>
-        <div class="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-xl border border-rose-200 dark:border-rose-800/40">
-          <span class="text-xs text-rose-600 dark:text-rose-400 font-semibold block flex items-center justify-center gap-1">
-            <span>📉</span> Pengeluaran
+        <div class="bg-rose-500/5 dark:bg-rose-950/30 p-3 rounded-xl border border-rose-500/20">
+          <span class="text-[11px] text-rose-600 dark:text-rose-400 font-semibold block uppercase tracking-wider">
+            Pengeluaran
           </span>
           <p id="stat-pengeluaran" class="text-sm sm:text-base font-bold font-mono text-rose-600 dark:text-rose-400 mt-1">Rp •••••••</p>
         </div>
@@ -160,9 +151,9 @@
     </section>
 
     <!-- Form Input Transaksi -->
-    <section class="glass-card p-4 space-y-3">
-      <h2 id="form-title" class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
-        <span>✏️</span> Tambah Transaksi
+    <section class="glass-card p-4 sm:p-5 space-y-3">
+      <h2 id="form-title" class="font-bold text-slate-800 dark:text-slate-100 text-sm">
+        Tambah Transaksi
       </h2>
       <form id="tx-form" class="space-y-3">
         <input type="hidden" id="tx-id">
@@ -192,25 +183,25 @@
         </div>
 
         <div class="flex gap-2 pt-1">
-          <button type="submit" class="flex-1 btn-primary">Simpan</button>
+          <button type="submit" class="flex-1 btn-primary">Simpan Transaksi</button>
           <button type="button" id="btn-cancel-edit" class="hidden btn-secondary">Batal</button>
         </div>
       </form>
     </section>
 
     <!-- Riwayat Transaksi -->
-    <section class="glass-card p-4 space-y-3">
+    <section class="glass-card p-4 sm:p-5 space-y-3">
       <div class="flex justify-between items-center">
-        <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
-          <span>📜</span> Riwayat Transaksi
+        <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm">
+          Riwayat Transaksi
         </h2>
-        <button id="btn-export-csv" class="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-semibold transition-colors flex items-center gap-1">
-          <span>📥</span> Export CSV
+        <button id="btn-export-csv" class="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-semibold transition-colors">
+          Export CSV
         </button>
       </div>
 
       <div>
-        <input type="text" id="search-tx" placeholder="🔍 Cari transaksi..." class="input-field">
+        <input type="text" id="search-tx" placeholder="Cari transaksi..." class="input-field">
       </div>
 
       <div id="tx-list" class="space-y-2"></div>
@@ -219,24 +210,23 @@
     <!-- 3. ACCORDION: IMPORT DATA (Di paling bawah) -->
     <section class="glass-card overflow-hidden">
       <button type="button" id="btn-toggle-import" class="w-full p-4 flex justify-between items-center font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-        <span class="flex items-center gap-2 text-sm">
-          <span>📑</span> Import Data (.csv)
+        <span class="text-sm font-semibold">
+          Import CSV
         </span>
         <span id="import-arrow" class="text-xs text-slate-400 transition-transform duration-200 transform">▼</span>
       </button>
 
-      <div id="import-content" class="hidden p-4 pt-2 border-t border-slate-200 dark:border-slate-800/60 space-y-3 bg-indigo-50/50 dark:bg-indigo-950/20">
-        <p class="text-xs text-indigo-700 dark:text-indigo-300">Upload file CSV Google Sheets / AppSheet kamu di sini:</p>
+      <div id="import-content" class="hidden p-4 pt-2 border-t border-slate-200 dark:border-slate-800/60 space-y-3 bg-indigo-50/30 dark:bg-indigo-950/20">
+        <p class="text-xs text-indigo-700 dark:text-indigo-300">Upload file CSV Google Sheets / Excel kamu di sini:</p>
         
         <div class="space-y-2">
-          <label for="csv-file-input" class="flex flex-col items-center justify-center w-full p-3.5 border-2 border-dashed border-indigo-400/40 hover:border-indigo-500 rounded-xl bg-white/50 dark:bg-slate-900/50 hover:bg-indigo-500/10 cursor-pointer transition-colors text-center group">
-            <span class="text-xl mb-1 group-hover:scale-110 transition-transform">📁</span>
+          <label for="csv-file-input" class="flex flex-col items-center justify-center w-full p-3.5 border-2 border-dashed border-indigo-400/30 hover:border-indigo-500/60 rounded-xl bg-white/50 dark:bg-slate-900/50 hover:bg-indigo-500/5 cursor-pointer transition-colors text-center group">
             <span id="csv-file-name" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Pilih / Tap File .CSV</span>
             <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Format: .csv dari Google Sheets / Excel</span>
             <input type="file" id="csv-file-input" accept=".csv, text/csv, application/vnd.ms-excel" class="hidden">
           </label>
           <button id="btn-import-csv" type="button" class="w-full btn-primary py-2 text-xs">
-            🚀 Upload &amp; Impor Transaksi
+            Upload &amp; Impor Transaksi
           </button>
         </div>
       </div>
@@ -244,14 +234,14 @@
 
   </main>
 
-  <!-- MODAL ⚙️ PENGATURAN CLOUD DATABASE -->
+  <!-- MODAL PENGATURAN CLOUD DATABASE -->
   <div id="cloud-modal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
     <div class="glass-card p-5 sm:p-6 rounded-2xl w-full max-w-md space-y-4 relative border border-slate-200 dark:border-slate-700/80 shadow-2xl max-h-[90vh] overflow-y-auto">
       <button id="btn-close-cloud-modal" type="button" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">&times;</button>
       
       <div class="text-center space-y-1">
-        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center justify-center gap-2">
-          <span>⚙️</span> Pengaturan Cloud Database
+        <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">
+          Pengaturan Cloud Database
         </h2>
         <p class="text-xs text-slate-500 dark:text-slate-400">Pilih &amp; hubungkan database cloud per perangkat ini</p>
       </div>
@@ -262,22 +252,19 @@
         <div>
           <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Penyedia Storage</label>
           <div class="grid grid-cols-3 gap-2">
-            <label class="cursor-pointer border border-slate-200 dark:border-slate-700/80 rounded-xl p-2 text-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
+            <label class="cursor-pointer border border-slate-200 dark:border-slate-700/80 rounded-xl p-2.5 text-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
               <input type="radio" name="cloud-provider" value="local" class="sr-only">
-              <span class="block text-base">💾</span>
-              <span class="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mt-1">Offline (Lokal)</span>
+              <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200">Offline (Lokal)</span>
             </label>
             
-            <label class="cursor-pointer border border-slate-200 dark:border-slate-700/80 rounded-xl p-2 text-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
+            <label class="cursor-pointer border border-slate-200 dark:border-slate-700/80 rounded-xl p-2.5 text-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
               <input type="radio" name="cloud-provider" value="gas" class="sr-only">
-              <span class="block text-base">📊</span>
-              <span class="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mt-1">Google Sheets</span>
+              <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200">Google Sheets</span>
             </label>
 
-            <label class="cursor-pointer border border-slate-200 dark:border-slate-700/80 rounded-xl p-2 text-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
+            <label class="cursor-pointer border border-slate-200 dark:border-slate-700/80 rounded-xl p-2.5 text-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
               <input type="radio" name="cloud-provider" value="supabase" class="sr-only">
-              <span class="block text-base">⚡</span>
-              <span class="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mt-1">Supabase</span>
+              <span class="block text-xs font-semibold text-slate-700 dark:text-slate-200">Supabase</span>
             </label>
           </div>
         </div>
@@ -289,8 +276,8 @@
           <p class="text-[11px] text-slate-500 dark:text-slate-400">
             Tempelkan WebApp URL hasil *Deploy as Web App* dari Google Sheets kamu.
           </p>
-          <button id="btn-open-gas-guide" type="button" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 pt-1">
-            <span>📄</span> Lihat Kode &amp; Panduan Google Sheets Script
+          <button id="btn-open-gas-guide" type="button" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline pt-1">
+            Lihat Kode &amp; Panduan Google Sheets Script
           </button>
         </div>
 
@@ -313,14 +300,14 @@
     </div>
   </div>
 
-  <!-- MODAL 📄 PANDUAN KODE GOOGLE APPS SCRIPT -->
+  <!-- MODAL PANDUAN KODE GOOGLE APPS SCRIPT -->
   <div id="gas-modal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
     <div class="glass-card p-5 sm:p-6 rounded-2xl w-full max-w-lg space-y-4 relative border border-slate-200 dark:border-slate-700/80 shadow-2xl max-h-[85vh] overflow-y-auto">
       <button id="btn-close-gas-modal" type="button" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">&times;</button>
       
       <div class="space-y-1">
-        <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-          <span>📄</span> Kode Google Apps Script (GAS)
+        <h2 class="text-base font-bold text-slate-800 dark:text-slate-100">
+          Kode Google Apps Script (GAS)
         </h2>
         <p class="text-xs text-slate-500 dark:text-slate-400">Salin kode ini ke Google Sheets kamu (Ekstensi &rarr; Apps Script):</p>
       </div>
@@ -440,7 +427,7 @@ function respondJSON(obj) {
 
       <div class="flex gap-2 pt-1">
         <button id="btn-copy-gas-code" type="button" class="flex-1 btn-primary py-2 text-xs">
-          📋 Salin Kode Script
+          Salin Kode Script
         </button>
         <button id="btn-close-gas-guide" type="button" class="btn-secondary py-2 text-xs">Tutup</button>
       </div>

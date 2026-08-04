@@ -31,35 +31,35 @@
         <h1 class="text-base font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5 leading-tight">
           Pitis
         </h1>
-        <p id="user-status" class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">Mode Demo (Data tidak tersimpan)</p>
+        <p id="user-status" class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1">
+          <span>💾</span> Mode Offline (Lokal)
+        </p>
       </div>
     </div>
 
-    <div id="auth-btn-container" class="flex items-center gap-2 flex-shrink-0">
+    <div class="flex items-center gap-1.5 flex-shrink-0">
       <!-- Button Toggle Mode Terang/Gelap -->
       <button id="btn-theme-toggle" type="button" class="btn-theme" title="Ubah Tema Mode">
         <span id="theme-toggle-icon">🌙</span>
       </button>
-      
-      <button id="btn-login-trigger" type="button" class="btn-primary py-1.5 px-3 text-xs">
-        Login
-      </button>
-      <button id="btn-logout" type="button" class="btn-danger py-1.5 px-3 hidden">
-        Logout
+
+      <!-- Button Pengaturan Cloud Database -->
+      <button id="btn-cloud-config" type="button" class="btn-secondary py-1.5 px-2.5 text-xs flex items-center gap-1" title="Pengaturan Database Cloud">
+        <span>⚙️</span> Cloud DB
       </button>
     </div>
   </header>
 
   <main class="max-w-md mx-auto p-3.5 space-y-3.5 mt-1">
 
-    <!-- Banner Demo Alert -->
-    <div id="demo-banner" class="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl flex justify-between items-center text-xs text-amber-700 dark:text-amber-300 backdrop-blur-sm">
-      <span class="flex items-center gap-1.5">
-        <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-        Mode Pratinjau Demo
+    <!-- Banner Info Cloud (Tampil bila menggunakan Mode Offline) -->
+    <div id="cloud-info-banner" class="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-2xl flex justify-between items-center text-xs text-indigo-700 dark:text-indigo-300 backdrop-blur-sm">
+      <span class="flex items-center gap-1.5 min-w-0">
+        <span class="inline-block w-2 h-2 rounded-full bg-indigo-400 animate-pulse flex-shrink-0"></span>
+        <span class="truncate">Database Cloud belum terhubung.</span>
       </span>
-      <button id="btn-login-banner" type="button" class="font-bold underline text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition">
-        Login Pemilik
+      <button id="btn-banner-cloud" type="button" class="font-bold underline text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition flex-shrink-0 ml-2">
+        Hubungkan Cloud ⚙️
       </button>
     </div>
 
@@ -220,7 +220,7 @@
       <div id="tx-list" class="space-y-2"></div>
     </section>
 
-    <!-- 3. ACCORDION: IMPORT DATA (Di paling bawah riwayat transaksi) -->
+    <!-- 3. ACCORDION: IMPORT DATA (Di paling bawah) -->
     <section class="glass-card overflow-hidden">
       <button type="button" id="btn-toggle-import" class="w-full p-4 flex justify-between items-center font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
         <span class="flex items-center gap-2 text-sm">
@@ -242,29 +242,191 @@
 
   </main>
 
-  <!-- Modal Login Privat -->
-  <div id="auth-modal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
-    <div class="glass-card p-6 rounded-2xl w-full max-w-sm space-y-4 relative border border-slate-200 dark:border-slate-700/80 shadow-2xl">
-      <button id="btn-close-modal" type="button" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">&times;</button>
+  <!-- MODAL ⚙️ PENGATURAN CLOUD DATABASE -->
+  <div id="cloud-modal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="glass-card p-5 sm:p-6 rounded-2xl w-full max-w-md space-y-4 relative border border-slate-200 dark:border-slate-700/80 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <button id="btn-close-cloud-modal" type="button" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">&times;</button>
+      
       <div class="text-center space-y-1">
-        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Login Pemilik</h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Masukkan akun terdaftar Supabase</p>
+        <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center justify-center gap-2">
+          <span>⚙️</span> Pengaturan Cloud Database
+        </h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Pilih &amp; hubungkan database cloud per perangkat ini</p>
       </div>
 
-      <form id="auth-form" class="space-y-3.5">
+      <form id="cloud-config-form" class="space-y-4 pt-1">
+        
+        <!-- Pilihan Provider -->
         <div>
-          <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">Email Owner</label>
-          <input type="email" id="auth-email" required class="input-field">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">Password</label>
-          <input type="password" id="auth-password" required class="input-field">
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Penyedia Storage</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="cursor-pointer border border-slate-200 dark:border-slate-700/80 rounded-xl p-2 text-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
+              <input type="radio" name="cloud-provider" value="local" class="sr-only">
+              <span class="block text-base">💾</span>
+              <span class="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mt-1">Offline (Lokal)</span>
+            </label>
+            
+            <label class="cursor-pointer border border-slate-200 dark:border-slate-700/80 rounded-xl p-2 text-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
+              <input type="radio" name="cloud-provider" value="gas" class="sr-only">
+              <span class="block text-base">📊</span>
+              <span class="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mt-1">Google Sheets</span>
+            </label>
+
+            <label class="cursor-pointer border border-slate-200 dark:border-slate-700/80 rounded-xl p-2 text-center hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
+              <input type="radio" name="cloud-provider" value="supabase" class="sr-only">
+              <span class="block text-base">⚡</span>
+              <span class="block text-[11px] font-semibold text-slate-700 dark:text-slate-200 mt-1">Supabase</span>
+            </label>
+          </div>
         </div>
 
-        <button type="submit" class="w-full btn-primary mt-2">
-          Masuk Aplikasi
+        <!-- Form Input Google Sheets (GAS) -->
+        <div id="group-gas-input" class="hidden space-y-2 bg-indigo-500/5 p-3 rounded-xl border border-indigo-500/20">
+          <label class="block text-xs font-semibold text-indigo-700 dark:text-indigo-300">Link WebApp Google Apps Script (GAS)</label>
+          <input type="url" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="input-field text-xs">
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">
+            Tempelkan WebApp URL hasil *Deploy as Web App* dari Google Sheets kamu.
+          </p>
+          <button id="btn-open-gas-guide" type="button" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 pt-1">
+            <span>📄</span> Lihat Kode &amp; Panduan Google Sheets Script
+          </button>
+        </div>
+
+        <!-- Form Input Supabase -->
+        <div id="group-supabase-input" class="hidden space-y-2.5 bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/20">
+          <div>
+            <label class="block text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-1">Supabase Project URL</label>
+            <input type="url" id="cfg-supabase-url" placeholder="https://your-project.supabase.co" class="input-field text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-1">Supabase Anon Key</label>
+            <input type="password" id="cfg-supabase-key" placeholder="eyJhbGciOi..." class="input-field text-xs">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full btn-primary py-2.5">
+          Simpan &amp; Sinkronkan Database
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL 📄 PANDUAN KODE GOOGLE APPS SCRIPT -->
+  <div id="gas-modal" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="glass-card p-5 sm:p-6 rounded-2xl w-full max-w-lg space-y-4 relative border border-slate-200 dark:border-slate-700/80 shadow-2xl max-h-[85vh] overflow-y-auto">
+      <button id="btn-close-gas-modal" type="button" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold transition">&times;</button>
+      
+      <div class="space-y-1">
+        <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <span>📄</span> Kode Google Apps Script (GAS)
+        </h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Salin kode ini ke Google Sheets kamu (Ekstensi &rarr; Apps Script):</p>
+      </div>
+
+      <div class="relative">
+        <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-[11px] font-mono leading-relaxed overflow-x-auto max-h-60 border border-slate-800 select-text" id="gas-code-block">
+function doGet(e) { return handleRequest(e); }
+function doPost(e) { return handleRequest(e); }
+
+function handleRequest(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var contents = e.postData ? JSON.parse(e.postData.contents) : {};
+  var action = contents.action || e.parameter.action || 'get';
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['ID', 'Tanggal', 'Tipe', 'Nominal', 'Keterangan']);
+  }
+
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+
+  try {
+    if (action === 'get') {
+      var rows = sheet.getDataRange().getValues();
+      var result = [];
+      for (var i = 1; i &lt; rows.length; i++) {
+        if (rows[i][0]) {
+          result.push({
+            id: String(rows[i][0]),
+            date: rows[i][1] instanceof Date ? formatDate(rows[i][1]) : String(rows[i][1]),
+            type: String(rows[i][2]),
+            amount: Number(rows[i][3]),
+            description: String(rows[i][4])
+          });
+        }
+      }
+      return respondJSON({ status: 'success', data: result });
+    }
+
+    if (action === 'add') {
+      var newTx = contents.data;
+      var newId = newTx.id || String(Date.now());
+      sheet.appendRow([newId, newTx.date, newTx.type, newTx.amount, newTx.description]);
+      return respondJSON({ status: 'success', id: newId });
+    }
+
+    if (action === 'update') {
+      var updated = contents.data;
+      var data = sheet.getDataRange().getValues();
+      for (var r = 1; r &lt; data.length; r++) {
+        if (String(data[r][0]) === String(updated.id)) {
+          sheet.getRange(r + 1, 1, 1, 5).setValues([[updated.id, updated.date, updated.type, updated.amount, updated.description]]);
+          return respondJSON({ status: 'success' });
+        }
+      }
+      return respondJSON({ status: 'error', message: 'ID tidak ditemukan' });
+    }
+
+    if (action === 'delete') {
+      var delId = contents.id;
+      var data = sheet.getDataRange().getValues();
+      for (var r = 1; r &lt; data.length; r++) {
+        if (String(data[r][0]) === String(delId)) {
+          sheet.deleteRow(r + 1);
+          return respondJSON({ status: 'success' });
+        }
+      }
+      return respondJSON({ status: 'error', message: 'ID tidak ditemukan' });
+    }
+  } catch (err) {
+    return respondJSON({ status: 'error', message: err.toString() });
+  } finally {
+    lock.releaseLock();
+  }
+
+  return respondJSON({ status: 'error', message: 'Aksi tidak dikenal' });
+}
+
+function formatDate(d) {
+  var year = d.getFullYear();
+  var month = ('0' + (d.getMonth() + 1)).slice(-2);
+  var day = ('0' + d.getDate()).slice(-2);
+  return year + '-' + month + '-' + day;
+}
+
+function respondJSON(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+</pre>
+      </div>
+
+      <div class="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+        <p class="font-bold">Langkah Deploy di Google Sheets:</p>
+        <ol class="list-decimal list-inside space-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+          <li>Klik tombol <b>Deploy &rarr; New deployment</b> di Apps Script.</li>
+          <li>Pilih jenis <b>Web App</b>.</li>
+          <li>Set <i>Execute as</i>: <b>Me</b> dan <i>Who has access</i>: <b>Anyone</b>.</li>
+          <li>Klik <b>Deploy</b>, salin <i>Web App URL</i>, dan tempelkan di Pitis.</li>
+        </ol>
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button id="btn-copy-gas-code" type="button" class="flex-1 btn-primary py-2 text-xs">
+          📋 Salin Kode Script
+        </button>
+        <button id="btn-close-gas-guide" type="button" class="btn-secondary py-2 text-xs">Tutup</button>
+      </div>
     </div>
   </div>
 

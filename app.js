@@ -1,38 +1,19 @@
 import './style.css';
-import { createClient } from '@supabase/supabase-js';
+import { 
+  getCloudConfig, 
+  saveCloudConfig, 
+  fetchTransactions, 
+  addTransaction, 
+  updateTransaction, 
+  deleteTransaction 
+} from './dbAdapter.js';
 
 // --- SERVICE WORKER REGISTRATION ---
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW reg error:', err));
 }
 
-// --- SUPABASE CONFIGURATION ---
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || ''; 
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
-const isValidSupabaseConfig = 
-  SUPABASE_URL && 
-  SUPABASE_ANON_KEY && 
-  !SUPABASE_URL.includes('your-project') &&
-  SUPABASE_URL.startsWith('http');
-
-const supabaseClient = isValidSupabaseConfig
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true }
-    }) 
-  : null;
-
-let dummyTransactions = [
-  { id: '1', date: new Date().toISOString().split('T')[0], type: 'pemasukan', amount: 500000, description: 'Gaji Freelance (Demo)' },
-  { id: '2', date: new Date().toISOString().split('T')[0], type: 'pengeluaran', amount: 25000, description: 'Kopi & Snack (Demo)' }
-];
-
-let currentUser = null;
-let realTransactions = [];
-let loginAttempts = 0;
-let isLocked = false;
-
-// State Sensor Sisa Pitis & Theme
+let cachedTransactions = [];
 let isPitisHidden = true;
 let cachedSisaPitisFormatted = "Rp 0";
 
@@ -80,8 +61,23 @@ window.addEventListener('DOMContentLoaded', async () => {
   const dateInput = document.getElementById('tx-date');
   if (dateInput) dateInput.valueAsDate = new Date();
 
-  // Theme Toggle Button
+  // Button Listeners
   document.getElementById('btn-theme-toggle')?.addEventListener('click', toggleTheme);
+  document.getElementById('btn-cloud-config')?.addEventListener('click', openCloudModal);
+  document.getElementById('btn-banner-cloud')?.addEventListener('click', openCloudModal);
+  document.getElementById('btn-close-cloud-modal')?.addEventListener('click', closeCloudModal);
+  document.getElementById('btn-open-gas-guide')?.addEventListener('click', openGasModal);
+  document.getElementById('btn-close-gas-modal')?.addEventListener('click', closeGasModal);
+  document.getElementById('btn-close-gas-guide')?.addEventListener('click', closeGasModal);
+  document.getElementById('btn-copy-gas-code')?.addEventListener('click', copyGasCode);
+
+  document.getElementById('cloud-config-form')?.addEventListener('submit', handleSaveCloudConfig);
+
+  // Radio button provider change
+  const providerRadios = document.querySelectorAll('input[name="cloud-provider"]');
+  providerRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => toggleProviderFields(e.target.value));
+  });
 
   // Accordion 1: Sisa Pitis
   document.getElementById('btn-toggle-pitis-acc')?.addEventListener('click', () => {
@@ -99,7 +95,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     arrow?.classList.toggle('rotate-180');
   });
 
-  // Accordion 3: Import CSV (Posisi Paling Bawah)
+  // Accordion 3: Import CSV
   document.getElementById('btn-toggle-import')?.addEventListener('click', () => {
     const content = document.getElementById('import-content');
     const arrow = document.getElementById('import-arrow');
@@ -143,10 +139,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById(id)?.addEventListener('change', renderFilteredList);
   });
 
-  document.getElementById('btn-login-trigger')?.addEventListener('click', openModal);
-  document.getElementById('btn-login-banner')?.addEventListener('click', openModal);
-  document.getElementById('btn-close-modal')?.addEventListener('click', closeModal);
-  document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
   document.getElementById('btn-cancel-edit')?.addEventListener('click', resetForm);
   document.getElementById('btn-import-csv')?.addEventListener('click', handleImportCSV);
   
@@ -159,7 +151,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-export-csv')?.addEventListener('click', handleExportCSV);
 
   document.getElementById('tx-form')?.addEventListener('submit', handleSaveTx);
-  document.getElementById('auth-form')?.addEventListener('submit', handleAuth);
 
   // Event Delegation untuk Edit & Hapus
   document.getElementById('tx-list')?.addEventListener('click', (e) => {
@@ -172,21 +163,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     else if (action === 'delete') handleDelete(id);
   });
 
-  if (supabaseClient) {
-    try {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      currentUser = user;
-    } catch (err) {
-      console.warn("Supabase Auth check skipped or offline", err);
-    }
-
-    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-      currentUser = session?.user || null;
-      await updateUIForAuth();
-    });
-  }
-
-  await updateUIForAuth();
+  updateCloudStatusUI();
+  await loadTransactions();
 });
 
 function handleFilterTypeChange(e) {
@@ -198,35 +176,106 @@ function handleFilterTypeChange(e) {
   renderFilteredList();
 }
 
-function openModal() { document.getElementById('auth-modal')?.classList.remove('hidden'); }
-function closeModal() { document.getElementById('auth-modal')?.classList.add('hidden'); }
+// --- CLOUD CONFIG MODAL LOGIC ---
+function openCloudModal() {
+  const config = getCloudConfig();
+  const modal = document.getElementById('cloud-modal');
+  
+  // Set radio value
+  const radio = document.querySelector(`input[name="cloud-provider"][value="${config.provider}"]`);
+  if (radio) radio.checked = true;
 
-async function updateUIForAuth() {
-  const statusEl = document.getElementById('user-status');
-  const loginBtn = document.getElementById('btn-login-trigger');
-  const logoutBtn = document.getElementById('btn-logout');
-  const demoBanner = document.getElementById('demo-banner');
+  document.getElementById('cfg-gas-url').value = config.gasUrl || '';
+  document.getElementById('cfg-supabase-url').value = config.supabaseUrl || '';
+  document.getElementById('cfg-supabase-key').value = config.supabaseAnonKey || '';
 
-  if (currentUser) {
-    if (statusEl) {
-      // Menyembunyikan alamat email privat, hanya menampilkan badge Mode Pemilik
-      statusEl.innerText = "Mode Pemilik";
-      statusEl.className = "text-xs text-emerald-600 dark:text-emerald-400 font-medium truncate";
-    }
-    loginBtn?.classList.add('hidden');
-    logoutBtn?.classList.remove('hidden');
-    demoBanner?.classList.add('hidden');
-  } else {
-    if (statusEl) {
-      statusEl.innerText = "Mode Demo (Khusus Pratinjau)";
-      statusEl.className = "text-xs text-slate-500 dark:text-slate-400 font-medium truncate";
-    }
-    loginBtn?.classList.remove('hidden');
-    logoutBtn?.classList.add('hidden');
-    demoBanner?.classList.remove('hidden');
+  toggleProviderFields(config.provider);
+  modal?.classList.remove('hidden');
+}
+
+function closeCloudModal() {
+  document.getElementById('cloud-modal')?.classList.add('hidden');
+}
+
+function openGasModal() {
+  document.getElementById('gas-modal')?.classList.remove('hidden');
+}
+
+function closeGasModal() {
+  document.getElementById('gas-modal')?.classList.add('hidden');
+}
+
+function copyGasCode() {
+  const codeText = document.getElementById('gas-code-block')?.innerText || '';
+  navigator.clipboard.writeText(codeText).then(() => {
+    showToast("Kode Google Apps Script berhasil disalin!", "success");
+  }).catch(() => {
+    showToast("Gagal menyalin kode. Silakan salin manual.", "error");
+  });
+}
+
+function toggleProviderFields(provider) {
+  const gasGroup = document.getElementById('group-gas-input');
+  const supabaseGroup = document.getElementById('group-supabase-input');
+
+  gasGroup?.classList.toggle('hidden', provider !== 'gas');
+  supabaseGroup?.classList.toggle('hidden', provider !== 'supabase');
+}
+
+async function handleSaveCloudConfig(e) {
+  e.preventDefault();
+  const selectedProvider = document.querySelector('input[name="cloud-provider"]:checked')?.value || 'local';
+  const gasUrl = document.getElementById('cfg-gas-url').value.trim();
+  const supabaseUrl = document.getElementById('cfg-supabase-url').value.trim();
+  const supabaseAnonKey = document.getElementById('cfg-supabase-key').value.trim();
+
+  if (selectedProvider === 'gas' && !gasUrl) {
+    showToast("Masukkan URL Google Apps Script WebApp kamu!", "error");
+    return;
   }
 
+  if (selectedProvider === 'supabase' && (!supabaseUrl || !supabaseAnonKey)) {
+    showToast("Masukkan Supabase URL & Anon Key kamu!", "error");
+    return;
+  }
+
+  saveCloudConfig({
+    provider: selectedProvider,
+    gasUrl,
+    supabaseUrl,
+    supabaseAnonKey
+  });
+
+  showToast("Pengaturan Cloud Database disimpan!", "success");
+  closeCloudModal();
+  updateCloudStatusUI();
   await loadTransactions();
+}
+
+function updateCloudStatusUI() {
+  const config = getCloudConfig();
+  const statusEl = document.getElementById('user-status');
+  const banner = document.getElementById('cloud-info-banner');
+
+  if (config.provider === 'gas' && config.gasUrl) {
+    if (statusEl) {
+      statusEl.innerHTML = `<span>📊</span> Google Sheets`;
+      statusEl.className = "text-xs text-indigo-600 dark:text-indigo-400 font-medium truncate flex items-center gap-1";
+    }
+    banner?.classList.add('hidden');
+  } else if (config.provider === 'supabase' && config.supabaseUrl) {
+    if (statusEl) {
+      statusEl.innerHTML = `<span>⚡</span> Supabase Cloud`;
+      statusEl.className = "text-xs text-emerald-600 dark:text-emerald-400 font-medium truncate flex items-center gap-1";
+    }
+    banner?.classList.add('hidden');
+  } else {
+    if (statusEl) {
+      statusEl.innerHTML = `<span>💾</span> Mode Offline (Lokal)`;
+      statusEl.className = "text-xs text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1";
+    }
+    banner?.classList.remove('hidden');
+  }
 }
 
 function updatePitisDisplay() {
@@ -244,20 +293,18 @@ function updatePitisDisplay() {
 
 // --- FETCH DATA ---
 async function loadTransactions() {
-  if (currentUser && supabaseClient) {
-    const { data, error } = await supabaseClient
-      .from('transactions')
-      .select('*')
-      .order('date', { ascending: false });
-
-    if (!error && data) realTransactions = data;
+  try {
+    cachedTransactions = await fetchTransactions();
+  } catch (err) {
+    showToast(err.message, "error");
+    cachedTransactions = [];
   }
   renderFilteredList();
 }
 
-// --- RENDER FILTERED LIST (DocumentFragment & Responsive Theme Styles) ---
+// --- RENDER FILTERED LIST ---
 function renderFilteredList() {
-  const transactions = currentUser ? realTransactions : dummyTransactions;
+  const transactions = cachedTransactions;
 
   // 1. SALDO KAS GLOBAL
   let globalMasuk = 0;
@@ -389,11 +436,6 @@ function getFilteredData(data) {
 
 // --- IMPORT CSV ---
 async function handleImportCSV() {
-  if (!currentUser) {
-    showToast("Harap login dulu sebagai pemilik untuk bisa mengimpor data!");
-    return;
-  }
-
   const fileInput = document.getElementById('csv-file-input');
   const file = fileInput?.files?.[0];
 
@@ -413,9 +455,12 @@ async function handleImportCSV() {
     },
     complete: async function(results) {
       const rows = results.data;
-      let newRecords = [];
+      let newCount = 0;
 
-      rows.forEach((row) => {
+      showToast("Sedang mengimpor transaksi...", "info");
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
         const keys = Object.keys(row);
         
         const dateKey = keys.find(k => k.includes('tanggal') || k.includes('date'));
@@ -456,36 +501,29 @@ async function handleImportCSV() {
           }
 
           if (amount > 0) {
-            newRecords.push({
-              user_id: currentUser.id,
-              date: formattedDate,
-              type: finalType,
-              amount: amount,
-              description: desc.toString().trim()
-            });
+            try {
+              await addTransaction({
+                date: formattedDate,
+                type: finalType,
+                amount: amount,
+                description: desc.toString().trim()
+              });
+              newCount++;
+            } catch (e) {
+              console.error("Gagal impor row:", e);
+            }
           }
         }
-      });
+      }
 
-      if (newRecords.length === 0) {
+      if (newCount === 0) {
         showToast("Gagal membaca CSV! Pastikan header kolom di file kamu ada kata: Tanggal, Tipe, Nominal, Keterangan.");
         return;
       }
 
-      if (!supabaseClient) {
-        showToast("Supabase belum terkonfigurasi di env.");
-        return;
-      }
-
-      const { error } = await supabaseClient.from('transactions').insert(newRecords);
-
-      if (error) {
-        showToast("Error Supabase: " + error.message);
-      } else {
-        showToast(`Selesai! ${newRecords.length} transaksi berhasil diimpor.`);
-        if (fileInput) fileInput.value = '';
-        await loadTransactions();
-      }
+      showToast(`Selesai! ${newCount} transaksi berhasil diimpor.`, "success");
+      if (fileInput) fileInput.value = '';
+      await loadTransactions();
     }
   });
 }
@@ -500,34 +538,23 @@ async function handleSaveTx(e) {
   const amount = Number(document.getElementById('tx-amount').value);
   const description = document.getElementById('tx-desc').value;
 
-  if (!currentUser) {
+  try {
     if (id) {
-      const idx = dummyTransactions.findIndex(t => t.id === id);
-      if (idx !== -1) dummyTransactions[idx] = { id, date, type, amount, description };
+      await updateTransaction(id, { date, type, amount, description });
+      showToast('Transaksi berhasil diperbarui!', 'success');
     } else {
-      dummyTransactions.unshift({ id: Date.now().toString(), date, type, amount, description });
+      await addTransaction({ date, type, amount, description });
+      showToast('Transaksi berhasil disimpan!', 'success');
     }
     resetForm();
-    renderFilteredList();
-    showToast('Tersimpan di mode demo!');
-    return;
+    await loadTransactions();
+  } catch (err) {
+    showToast(err.message, 'error');
   }
-
-  if (!supabaseClient) return;
-
-  if (id) {
-    await supabaseClient.from('transactions').update({ date, type, amount, description }).eq('id', id);
-  } else {
-    await supabaseClient.from('transactions').insert([{ user_id: currentUser.id, date, type, amount, description }]);
-  }
-
-  resetForm();
-  await loadTransactions();
 }
 
 function prepareEdit(id) {
-  const list = currentUser ? realTransactions : dummyTransactions;
-  const tx = list.find(t => t.id === id);
+  const tx = cachedTransactions.find(t => String(t.id) === String(id));
   if (!tx) return;
 
   document.getElementById('tx-id').value = tx.id;
@@ -545,12 +572,12 @@ async function handleDelete(id) {
   const isOk = await showConfirm('Yakin mau hapus catatan ini?');
   if (!isOk) return;
 
-  if (!currentUser) {
-    dummyTransactions = dummyTransactions.filter(t => t.id !== id);
-    renderFilteredList();
-  } else if (supabaseClient) {
-    await supabaseClient.from('transactions').delete().eq('id', id);
+  try {
+    await deleteTransaction(id);
+    showToast('Transaksi dihapus.', 'success');
     await loadTransactions();
+  } catch (err) {
+    showToast(err.message, 'error');
   }
 }
 
@@ -565,62 +592,9 @@ function resetForm() {
   document.getElementById('btn-cancel-edit')?.classList.add('hidden');
 }
 
-// --- AUTHENTICATION ---
-async function handleAuth(e) {
-  e.preventDefault();
-
-  if (isLocked) {
-    showToast("Terlalu banyak percobaan gagal! Kunci dibuka dalam 30 detik.");
-    return;
-  }
-
-  if (!supabaseClient) {
-    showToast("Supabase client belum terhubung. Periksa file .env kamu!");
-    return;
-  }
-
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    loginAttempts++;
-    const sisa = 3 - loginAttempts;
-
-    if (loginAttempts >= 3) {
-      isLocked = true;
-      showToast("Gagal 3 kali! Akses login dikunci selama 30 detik.");
-      setTimeout(() => {
-        isLocked = false;
-        loginAttempts = 0;
-      }, 30000);
-      return;
-    }
-
-    showToast(`Gagal login: ${error.message}\nSisa percobaan: ${sisa}`);
-    return;
-  }
-
-  loginAttempts = 0;
-  currentUser = data.user;
-  showToast("Berhasil login sebagai Pemilik!");
-  closeModal();
-  await updateUIForAuth();
-}
-
-async function handleLogout() {
-  if (supabaseClient) {
-    await supabaseClient.auth.signOut();
-  }
-  currentUser = null;
-  await updateUIForAuth();
-  showToast("Berhasil logout!");
-}
-
 // --- EXPORT CSV ---
 async function handleExportCSV() {
-  const data = getFilteredData(currentUser ? realTransactions : dummyTransactions);
+  const data = getFilteredData(cachedTransactions);
   if (data.length === 0) {
     showToast("Tidak ada data untuk diexport!", "error");
     return;
@@ -672,8 +646,8 @@ function showToast(message, type = 'info') {
   
   const colors = {
     info: 'bg-slate-900 border border-indigo-500/30 text-indigo-200 dark:bg-slate-900 dark:text-indigo-200',
-    success: 'bg-emerald-900 border border-emerald-500/30 text-emerald-200',
-    error: 'bg-rose-900 border border-rose-500/30 text-rose-200'
+    success: 'bg-emerald-950 border border-emerald-500/30 text-emerald-200',
+    error: 'bg-rose-950 border border-rose-500/30 text-rose-200'
   };
   
   toast.className = `${colors[type]} p-3 rounded-xl shadow-xl text-xs font-semibold pointer-events-auto transform transition-all duration-300 translate-y-4 opacity-0 flex items-center justify-between gap-2 backdrop-blur-md`;

@@ -365,6 +365,21 @@ function handleRequest(e) {
       return respondJSON({ status: 'success', id: newId });
     }
 
+    if (action === 'batch_add') {
+      var items = contents.data || [];
+      if (items.length > 0) {
+        var rowsToAdd = [];
+        for (var k = 0; k &lt; items.length; k++) {
+          var it = items[k];
+          var itId = it.id || String(Date.now() + Math.random());
+          rowsToAdd.push([itId, it.date, it.type, it.amount, it.description]);
+        }
+        var startRow = sheet.getLastRow() + 1;
+        sheet.getRange(startRow, 1, rowsToAdd.length, 5).setValues(rowsToAdd);
+      }
+      return respondJSON({ status: 'success', count: items.length });
+    }
+
     if (action === 'update') {
       var updated = contents.data;
       var data = sheet.getDataRange().getValues();

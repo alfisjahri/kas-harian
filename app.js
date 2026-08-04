@@ -4,6 +4,7 @@ import {
   saveCloudConfig, 
   fetchTransactions, 
   addTransaction, 
+  batchAddTransactions,
   updateTransaction, 
   deleteTransaction 
 } from './dbAdapter.js';
@@ -435,6 +436,43 @@ function getFilteredData(data) {
 }
 
 // --- IMPORT CSV ---
+function parseCSVDate(rawDate) {
+  if (!rawDate) return new Date().toISOString().split('T')[0];
+  let str = rawDate.toString().trim();
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    return str.substring(0, 10);
+  }
+
+  if (str.includes('/') || str.includes('-')) {
+    const sep = str.includes('/') ? '/' : '-';
+    const parts = str.split(sep);
+    if (parts.length === 3) {
+      let day, month, year;
+      if (parts[0].length === 4) {
+        year = parts[0];
+        month = parts[1].padStart(2, '0');
+        day = parts[2].padStart(2, '0');
+      } else {
+        day = parts[0].padStart(2, '0');
+        month = parts[1].padStart(2, '0');
+        year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+        if (Number(day) > 12 && Number(month) <= 12) {
+          const tmp = day; day = month; month = tmp;
+        }
+      }
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString().split('T')[0];
+  }
+
+  return new Date().toISOString().split('T')[0];
+}
+
 async function handleImportCSV() {
   const fileInput = document.getElementById('csv-file-input');
   const file = fileInput?.files?.[0];
@@ -447,83 +485,82 @@ async function handleImportCSV() {
   const PapaModule = await import('papaparse');
   const Papa = PapaModule.default || PapaModule;
 
+  showToast("Membaca file CSV...", "info");
+
   Papa.parse(file, {
     header: true,
     skipEmptyLines: true,
+    dynamicTyping: false,
     transformHeader: function(h) {
       return h.replace(/^\ufeff/, '').trim().toLowerCase();
     },
     complete: async function(results) {
       const rows = results.data;
-      let newCount = 0;
+      if (!rows || rows.length === 0) {
+        showToast("File CSV kosong!", "error");
+        return;
+      }
 
-      showToast("Sedang mengimpor transaksi...", "info");
+      let parsedRecords = [];
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         const keys = Object.keys(row);
         
-        const dateKey = keys.find(k => k.includes('tanggal') || k.includes('date'));
-        const typeKey = keys.find(k => k.includes('tipe') || k.includes('type') || k.includes('jenis'));
-        const amountKey = keys.find(k => k.includes('nominal') || k.includes('amount') || k.includes('jumlah'));
-        const descKey = keys.find(k => k.includes('keterangan') || k.includes('desc') || k.includes('catatan'));
+        const dateKey = keys.find(k => k.includes('tanggal') || k.includes('date') || k.includes('tgl') || k.includes('waktu'));
+        const typeKey = keys.find(k => k.includes('tipe') || k.includes('type') || k.includes('jenis') || k.includes('kategori'));
+        const amountKey = keys.find(k => k.includes('nominal') || k.includes('amount') || k.includes('jumlah') || k.includes('total') || k.includes('kredit') || k.includes('debit'));
+        const descKey = keys.find(k => k.includes('keterangan') || k.includes('desc') || k.includes('catatan') || k.includes('rincian') || k.includes('nama') || k.includes('detail'));
 
         const rawDate = dateKey ? row[dateKey] : null;
         const rawType = typeKey ? row[typeKey] : '';
         const rawAmount = amountKey ? row[amountKey] : null;
-        const desc = descKey && row[descKey] ? row[descKey] : 'Import CSV';
+        const desc = descKey && row[descKey] ? row[descKey] : (keys[0] ? row[keys[0]] : 'Import CSV');
 
-        if (rawDate && rawAmount) {
-          const amount = Number(rawAmount.toString().replace(/[^0-9]/g, ''));
-
-          const typeStr = rawType.toString().trim().toLowerCase();
-          const isPemasukan = 
-            typeStr.includes('masuk') || 
-            typeStr.includes('pemasukan') || 
-            typeStr.includes('income') || 
-            typeStr.includes('in') || 
-            typeStr.includes('debit') ||
-            typeStr.includes('kredit') ||
-            typeStr === 'p' || 
-            typeStr === '+';
-
-          const finalType = isPemasukan ? 'pemasukan' : 'pengeluaran';
-
-          let formattedDate = rawDate.toString().trim();
-          if (formattedDate.includes('/')) {
-            const parts = formattedDate.split('/');
-            if (parts.length === 3) {
-              const day = parts[0].padStart(2, '0');
-              const month = parts[1].padStart(2, '0');
-              const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
-              formattedDate = `${year}-${month}-${day}`;
-            }
-          }
+        if (rawAmount !== null && rawAmount !== undefined) {
+          const cleanAmountStr = rawAmount.toString().replace(/[^0-9.-]/g, '');
+          const amount = Math.abs(Number(cleanAmountStr));
 
           if (amount > 0) {
-            try {
-              await addTransaction({
-                date: formattedDate,
-                type: finalType,
-                amount: amount,
-                description: desc.toString().trim()
-              });
-              newCount++;
-            } catch (e) {
-              console.error("Gagal impor row:", e);
-            }
+            const typeStr = rawType.toString().trim().toLowerCase();
+            const isPemasukan = 
+              typeStr.includes('masuk') || 
+              typeStr.includes('pemasukan') || 
+              typeStr.includes('income') || 
+              typeStr.includes('in') || 
+              typeStr.includes('debit') ||
+              typeStr.includes('kredit') ||
+              typeStr === 'p' || 
+              typeStr === '+';
+
+            const finalType = isPemasukan ? 'pemasukan' : 'pengeluaran';
+            const formattedDate = parseCSVDate(rawDate);
+
+            parsedRecords.push({
+              date: formattedDate,
+              type: finalType,
+              amount: amount,
+              description: desc.toString().trim()
+            });
           }
         }
       }
 
-      if (newCount === 0) {
-        showToast("Gagal membaca CSV! Pastikan header kolom di file kamu ada kata: Tanggal, Tipe, Nominal, Keterangan.");
+      if (parsedRecords.length === 0) {
+        showToast("Gagal membaca CSV! Pastikan file memiliki kolom Tanggal, Nominal, dan Keterangan.", "error");
         return;
       }
 
-      showToast(`Selesai! ${newCount} transaksi berhasil diimpor.`, "success");
-      if (fileInput) fileInput.value = '';
-      await loadTransactions();
+      showToast(`Mengimpor ${parsedRecords.length} transaksi...`, "info");
+
+      try {
+        await batchAddTransactions(parsedRecords);
+        showToast(`Selesai! ${parsedRecords.length} transaksi berhasil diimpor.`, "success");
+        if (fileInput) fileInput.value = '';
+        await loadTransactions();
+      } catch (err) {
+        showToast(`Gagal impor: ${err.message}`, "error");
+      }
     }
   });
 }

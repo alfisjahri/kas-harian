@@ -53,7 +53,6 @@ function getLocalTransactions() {
   } catch (e) {
     console.error("Gagal membaca LocalStorage", e);
   }
-  // Inisialisasi dummy awal bila belum ada
   localStorage.setItem(LOCAL_TX_KEY, JSON.stringify(defaultDummyData));
   return defaultDummyData;
 }
@@ -64,9 +63,6 @@ function saveLocalTransactions(list) {
 
 // --- UNIFIED DATABASE ADAPTOR ---
 
-/**
- * Membaca semua transaksi dari provider aktif (Local / GAS / Supabase)
- */
 export async function fetchTransactions() {
   const config = getCloudConfig();
 
@@ -100,13 +96,9 @@ export async function fetchTransactions() {
     }
   }
 
-  // Default: LocalStorage
   return getLocalTransactions();
 }
 
-/**
- * Menambah transaksi baru
- */
 export async function addTransaction(txData) {
   const config = getCloudConfig();
   const newTx = {
@@ -143,16 +135,59 @@ export async function addTransaction(txData) {
     }
   }
 
-  // LocalStorage
   const localList = getLocalTransactions();
   localList.unshift(newTx);
   saveLocalTransactions(localList);
   return newTx;
 }
 
-/**
- * Memperbarui transaksi
- */
+export async function batchAddTransactions(txList) {
+  if (!txList || txList.length === 0) return [];
+  const config = getCloudConfig();
+
+  const formattedList = txList.map((tx, idx) => ({
+    id: tx.id || (Date.now() + idx).toString(),
+    date: tx.date,
+    type: tx.type,
+    amount: Number(tx.amount),
+    description: tx.description
+  }));
+
+  if (config.provider === 'gas' && config.gasUrl) {
+    const res = await fetch(config.gasUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'batch_add', data: formattedList })
+    });
+    const json = await res.json();
+    if (json.status !== 'success') {
+      throw new Error(json.message || "Gagal mengimpor batch transaksi ke Google Sheets.");
+    }
+    return formattedList;
+  }
+
+  if (config.provider === 'supabase' && config.supabaseUrl && config.supabaseAnonKey) {
+    const client = getSupabaseClient(config);
+    if (client) {
+      const recordsToInsert = formattedList.map(t => ({
+        date: t.date,
+        type: t.type,
+        amount: t.amount,
+        description: t.description
+      }));
+      const { error } = await client.from('transactions').insert(recordsToInsert);
+      if (error) throw new Error(`Supabase Batch Insert Error: ${error.message}`);
+      return formattedList;
+    }
+  }
+
+  // LocalStorage
+  const localList = getLocalTransactions();
+  const merged = [...formattedList, ...localList];
+  saveLocalTransactions(merged);
+  return formattedList;
+}
+
 export async function updateTransaction(id, txData) {
   const config = getCloudConfig();
   const updatedTx = {
@@ -189,7 +224,6 @@ export async function updateTransaction(id, txData) {
     }
   }
 
-  // LocalStorage
   const localList = getLocalTransactions();
   const idx = localList.findIndex(t => String(t.id) === String(id));
   if (idx !== -1) {
@@ -199,9 +233,6 @@ export async function updateTransaction(id, txData) {
   return updatedTx;
 }
 
-/**
- * Menghapus transaksi
- */
 export async function deleteTransaction(id) {
   const config = getCloudConfig();
 
@@ -231,7 +262,6 @@ export async function deleteTransaction(id) {
     }
   }
 
-  // LocalStorage
   let localList = getLocalTransactions();
   localList = localList.filter(t => String(t.id) !== String(id));
   saveLocalTransactions(localList);

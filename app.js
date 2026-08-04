@@ -32,9 +32,37 @@ let realTransactions = [];
 let loginAttempts = 0;
 let isLocked = false;
 
-// State Sensor Sisa Pitis
+// State Sensor Sisa Pitis & Theme
 let isPitisHidden = true;
 let cachedSisaPitisFormatted = "Rp 0";
+
+// --- THEME MANAGEMENT ---
+function initTheme() {
+  const savedTheme = localStorage.getItem('pitis-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+
+  setTheme(isDark ? 'dark' : 'light');
+}
+
+function setTheme(theme) {
+  const html = document.documentElement;
+  const icon = document.getElementById('theme-toggle-icon');
+
+  if (theme === 'dark') {
+    html.classList.add('dark');
+    if (icon) icon.innerText = '☀️';
+  } else {
+    html.classList.remove('dark');
+    if (icon) icon.innerText = '🌙';
+  }
+  localStorage.setItem('pitis-theme', theme);
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.contains('dark');
+  setTheme(isDark ? 'light' : 'dark');
+}
 
 // --- UTILITY: DEBOUNCE ---
 function debounce(fn, delay = 150) {
@@ -47,8 +75,13 @@ function debounce(fn, delay = 150) {
 
 // --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', async () => {
+  initTheme();
+
   const dateInput = document.getElementById('tx-date');
   if (dateInput) dateInput.valueAsDate = new Date();
+
+  // Theme Toggle Button
+  document.getElementById('btn-theme-toggle')?.addEventListener('click', toggleTheme);
 
   // Accordion 1: Sisa Pitis
   document.getElementById('btn-toggle-pitis-acc')?.addEventListener('click', () => {
@@ -58,7 +91,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     arrow?.classList.toggle('rotate-180');
   });
 
-  // Accordion 2: Rekapan & Filter
+  // Accordion 2: Statistik
   document.getElementById('btn-toggle-summary')?.addEventListener('click', () => {
     const content = document.getElementById('summary-content');
     const arrow = document.getElementById('summary-arrow');
@@ -66,7 +99,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     arrow?.classList.toggle('rotate-180');
   });
 
-  // Accordion 3: Import CSV
+  // Accordion 3: Import CSV (Posisi Paling Bawah)
   document.getElementById('btn-toggle-import')?.addEventListener('click', () => {
     const content = document.getElementById('import-content');
     const arrow = document.getElementById('import-arrow');
@@ -117,7 +150,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-cancel-edit')?.addEventListener('click', resetForm);
   document.getElementById('btn-import-csv')?.addEventListener('click', handleImportCSV);
   
-  // Debounced Search Input (Mencegah Spaming Re-render RAM)
+  // Debounced Search Input
   const searchInput = document.getElementById('search-tx');
   if (searchInput) {
     searchInput.addEventListener('input', debounce(renderFilteredList, 150));
@@ -128,7 +161,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('tx-form')?.addEventListener('submit', handleSaveTx);
   document.getElementById('auth-form')?.addEventListener('submit', handleAuth);
 
-  // Event Delegation untuk Edit & Hapus pada Daftar Transaksi (Mencegah Memory Leak)
+  // Event Delegation untuk Edit & Hapus
   document.getElementById('tx-list')?.addEventListener('click', (e) => {
     const target = e.target.closest('[data-action]');
     if (!target) return;
@@ -176,8 +209,9 @@ async function updateUIForAuth() {
 
   if (currentUser) {
     if (statusEl) {
-      statusEl.innerText = `Pemilik: ${currentUser.email}`;
-      statusEl.className = "text-xs text-emerald-400 font-medium";
+      // Menyembunyikan alamat email privat, hanya menampilkan badge Mode Pemilik
+      statusEl.innerText = "Mode Pemilik";
+      statusEl.className = "text-xs text-emerald-600 dark:text-emerald-400 font-medium truncate";
     }
     loginBtn?.classList.add('hidden');
     logoutBtn?.classList.remove('hidden');
@@ -185,7 +219,7 @@ async function updateUIForAuth() {
   } else {
     if (statusEl) {
       statusEl.innerText = "Mode Demo (Khusus Pratinjau)";
-      statusEl.className = "text-xs text-slate-400 font-medium";
+      statusEl.className = "text-xs text-slate-500 dark:text-slate-400 font-medium truncate";
     }
     loginBtn?.classList.remove('hidden');
     logoutBtn?.classList.add('hidden');
@@ -208,7 +242,7 @@ function updatePitisDisplay() {
   }
 }
 
-// --- FETCH DATA (Hanya Dipanggil Saat Auth / Modifikasi Data) ---
+// --- FETCH DATA ---
 async function loadTransactions() {
   if (currentUser && supabaseClient) {
     const { data, error } = await supabaseClient
@@ -221,7 +255,7 @@ async function loadTransactions() {
   renderFilteredList();
 }
 
-// --- RENDER FILTERED LIST (DocumentFragment for Low Memory & Fast DOM Render) ---
+// --- RENDER FILTERED LIST (DocumentFragment & Responsive Theme Styles) ---
 function renderFilteredList() {
   const transactions = currentUser ? realTransactions : dummyTransactions;
 
@@ -256,12 +290,12 @@ function renderFilteredList() {
   if (statPemasukan) statPemasukan.innerText = formatRp(totalMasukPeriode);
   if (statPengeluaran) statPengeluaran.innerText = formatRp(totalKeluarPeriode);
 
-  // 3. RENDER RIWAYAT (DocumentFragment Optimization)
+  // 3. RENDER RIWAYAT (DocumentFragment)
   const listContainer = document.getElementById('tx-list');
   if (!listContainer) return;
 
   if (filtered.length === 0) {
-    listContainer.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">Belum ada transaksi di periode ini.</p>`;
+    listContainer.innerHTML = `<p class="text-xs text-slate-500 dark:text-slate-400 text-center py-6">Belum ada transaksi di periode ini.</p>`;
     return;
   }
 
@@ -272,19 +306,19 @@ function renderFilteredList() {
     const isIncome = t.type === 'pemasukan';
 
     const card = document.createElement('div');
-    card.className = 'flex justify-between items-center p-3 border border-slate-800/80 rounded-xl bg-slate-900/60 backdrop-blur-sm text-sm hover:border-slate-700/80 transition-colors';
+    card.className = 'flex justify-between items-center p-3 border border-slate-200 dark:border-slate-800/80 rounded-xl bg-white/80 dark:bg-slate-900/60 backdrop-blur-sm text-sm hover:border-slate-300 dark:hover:border-slate-700/80 transition-colors';
     card.innerHTML = `
       <div class="space-y-0.5">
-        <p class="font-semibold text-slate-100">${escapeHtml(t.description)}</p>
-        <p class="text-xs text-slate-400 font-mono">${t.date}</p>
+        <p class="font-semibold text-slate-800 dark:text-slate-100">${escapeHtml(t.description)}</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 font-mono">${t.date}</p>
       </div>
       <div class="text-right">
-        <p class="font-bold font-mono ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
+        <p class="font-bold font-mono ${isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
           ${isIncome ? '+' : '-'} ${formatRp(t.amount)}
         </p>
         <div class="space-x-2 text-xs mt-1">
-          <button data-action="edit" data-id="${t.id}" class="text-indigo-400 hover:text-indigo-300 font-medium">Edit</button>
-          <button data-action="delete" data-id="${t.id}" class="text-rose-400 hover:text-rose-300 font-medium">Hapus</button>
+          <button data-action="edit" data-id="${t.id}" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">Edit</button>
+          <button data-action="delete" data-id="${t.id}" class="text-rose-600 dark:text-rose-400 hover:underline font-medium">Hapus</button>
         </div>
       </div>
     `;
@@ -353,7 +387,7 @@ function getFilteredData(data) {
   });
 }
 
-// --- IMPORT CSV (Dynamic Lazy Loading PapaParse) ---
+// --- IMPORT CSV ---
 async function handleImportCSV() {
   if (!currentUser) {
     showToast("Harap login dulu sebagai pemilik untuk bisa mengimpor data!");
@@ -368,7 +402,6 @@ async function handleImportCSV() {
     return;
   }
 
-  // Dynamic Lazy Loading PapaParse (Hanya dimuat saat digunakan!)
   const PapaModule = await import('papaparse');
   const Papa = PapaModule.default || PapaModule;
 
@@ -585,7 +618,7 @@ async function handleLogout() {
   showToast("Berhasil logout!");
 }
 
-// --- EXPORT CSV (Dynamic Lazy Load PapaParse) ---
+// --- EXPORT CSV ---
 async function handleExportCSV() {
   const data = getFilteredData(currentUser ? realTransactions : dummyTransactions);
   if (data.length === 0) {
@@ -638,9 +671,9 @@ function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   
   const colors = {
-    info: 'bg-slate-900 border border-indigo-500/30 text-indigo-200',
-    success: 'bg-emerald-950 border border-emerald-500/30 text-emerald-200',
-    error: 'bg-rose-950 border border-rose-500/30 text-rose-200'
+    info: 'bg-slate-900 border border-indigo-500/30 text-indigo-200 dark:bg-slate-900 dark:text-indigo-200',
+    success: 'bg-emerald-900 border border-emerald-500/30 text-emerald-200',
+    error: 'bg-rose-900 border border-rose-500/30 text-rose-200'
   };
   
   toast.className = `${colors[type]} p-3 rounded-xl shadow-xl text-xs font-semibold pointer-events-auto transform transition-all duration-300 translate-y-4 opacity-0 flex items-center justify-between gap-2 backdrop-blur-md`;

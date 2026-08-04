@@ -154,16 +154,39 @@ export async function batchAddTransactions(txList) {
   }));
 
   if (config.provider === 'gas' && config.gasUrl) {
-    const res = await fetch(config.gasUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'batch_add', data: formattedList })
-    });
-    const json = await res.json();
-    if (json.status !== 'success') {
-      throw new Error(json.message || "Gagal mengimpor batch transaksi ke Google Sheets.");
+    let isBatchSuccess = false;
+
+    // 1. Coba batch_add terlebih dahulu (Super Cepat)
+    try {
+      const res = await fetch(config.gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'batch_add', data: formattedList })
+      });
+      const json = await res.json();
+      if (json && json.status === 'success') {
+        isBatchSuccess = true;
+        return formattedList;
+      }
+    } catch (e) {
+      console.warn("GAS batch_add gagal atau belum di-update di Apps Script pengguna, mencoba fallback...", e);
     }
-    return formattedList;
+
+    // 2. Fallback otomatis jika Apps Script pengguna masih versi lama (belum ada batch_add)
+    if (!isBatchSuccess) {
+      for (let i = 0; i < formattedList.length; i++) {
+        const res = await fetch(config.gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'add', data: formattedList[i] })
+        });
+        const json = await res.json();
+        if (json && json.status !== 'success') {
+          throw new Error(json.message || `Gagal mengimpor transaksi ke-${i + 1} ke Google Sheets.`);
+        }
+      }
+      return formattedList;
+    }
   }
 
   if (config.provider === 'supabase' && config.supabaseUrl && config.supabaseAnonKey) {

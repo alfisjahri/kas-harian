@@ -19,7 +19,7 @@
   <!-- Static Compiled CSS -->
   <link rel="stylesheet" href="./style.css">
 </head>
-<body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans min-h-screen pb-20 select-none">
+<body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans min-h-screen pb-20">
 
   <!-- Header Sticky Dashboard -->
   <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/80 p-3.5 sticky top-0 z-30 flex justify-between items-center shadow-md dark:shadow-lg dark:shadow-black/30 transition-colors duration-200">
@@ -229,12 +229,18 @@
         <span id="import-arrow" class="text-xs text-slate-400 transition-transform duration-200 transform">▼</span>
       </button>
 
-      <div id="import-content" class="hidden p-4 pt-2 border-t border-slate-200 dark:border-slate-800/60 space-y-2 bg-indigo-50/50 dark:bg-indigo-950/20">
+      <div id="import-content" class="hidden p-4 pt-2 border-t border-slate-200 dark:border-slate-800/60 space-y-3 bg-indigo-50/50 dark:bg-indigo-950/20">
         <p class="text-xs text-indigo-700 dark:text-indigo-300">Upload file CSV Google Sheets / AppSheet kamu di sini:</p>
-        <div class="flex gap-2 items-center pt-1">
-          <input type="file" id="csv-file-input" accept=".csv" class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
-          <button id="btn-import-csv" type="button" class="btn-primary py-1.5 px-3 text-xs whitespace-nowrap">
-            Upload
+        
+        <div class="space-y-2">
+          <label for="csv-file-input" class="flex flex-col items-center justify-center w-full p-3.5 border-2 border-dashed border-indigo-400/40 hover:border-indigo-500 rounded-xl bg-white/50 dark:bg-slate-900/50 hover:bg-indigo-500/10 cursor-pointer transition-colors text-center group">
+            <span class="text-xl mb-1 group-hover:scale-110 transition-transform">📁</span>
+            <span id="csv-file-name" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Pilih / Tap File .CSV</span>
+            <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Format: .csv dari Google Sheets / Excel</span>
+            <input type="file" id="csv-file-input" accept=".csv, text/csv, application/vnd.ms-excel" class="hidden">
+          </label>
+          <button id="btn-import-csv" type="button" class="w-full btn-primary py-2 text-xs">
+            🚀 Upload &amp; Impor Transaksi
           </button>
         </div>
       </div>

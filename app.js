@@ -143,6 +143,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-cancel-edit')?.addEventListener('click', resetForm);
   document.getElementById('btn-import-csv')?.addEventListener('click', handleImportCSV);
   
+  // Listener update nama file CSV
+  document.getElementById('csv-file-input')?.addEventListener('change', (e) => {
+    const fileNameEl = document.getElementById('csv-file-name');
+    const file = e.target.files?.[0];
+    if (file && fileNameEl) {
+      fileNameEl.innerText = `📄 ${file.name}`;
+    }
+  });
+  
   // Debounced Search Input
   const searchInput = document.getElementById('search-tx');
   if (searchInput) {

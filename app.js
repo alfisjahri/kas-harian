@@ -234,6 +234,7 @@ function toggleProviderFields(provider) {
 
 async function handleSaveCloudConfig(e) {
   e.preventDefault();
+  const prevConfig = getCloudConfig();
   const selectedProvider = document.querySelector('input[name="cloud-provider"]:checked')?.value || 'local';
   const gasUrl = document.getElementById('cfg-gas-url').value.trim();
   const supabaseUrl = document.getElementById('cfg-supabase-url').value.trim();
@@ -259,6 +260,27 @@ async function handleSaveCloudConfig(e) {
   showToast("Pengaturan Cloud Database disimpan!", "success");
   closeCloudModal();
   updateCloudStatusUI();
+
+  // Sinkronisasi data offline yang diimpor sebelumnya ke cloud DB baru
+  if (prevConfig.provider === 'local' && selectedProvider !== 'local') {
+    try {
+      const localRaw = localStorage.getItem('pitis_local_transactions');
+      if (localRaw) {
+        const localList = JSON.parse(localRaw);
+        if (Array.isArray(localList) && localList.length > 0) {
+          const isSync = await showConfirm(`Kamu memiliki ${localList.length} transaksi di mode offline. Apakah ingin langsung mengunggah & men-sinkronkan semua data lokal ini ke cloud sekarang?`);
+          if (isSync) {
+            showToast(`Mengunggah ${localList.length} transaksi ke cloud...`, "info");
+            await batchAddTransactions(localList);
+            showToast("Berhasil men-sinkronkan semua data ke cloud!", "success");
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Gagal sync data lokal ke cloud:", err);
+    }
+  }
+
   await loadTransactions();
 }
 
@@ -299,6 +321,61 @@ function updatePitisDisplay() {
     if (statSisaEl) statSisaEl.innerText = cachedSisaPitisFormatted;
     if (eyeIconEl) eyeIconEl.innerText = "🙈";
   }
+}
+
+// --- HELPER PARSING TANGGAL ANDAL ---
+function normalizeDate(raw) {
+  if (!raw) return { year: NaN, month: NaN, dateNum: NaN, ymd: '' };
+  let str = raw.toString().trim();
+  if (str.includes('T')) str = str.split('T')[0];
+
+  let year = NaN, month = NaN, dateNum = NaN;
+
+  if (str.includes('-')) {
+    const parts = str.split('-');
+    if (parts[0].length === 4) {
+      year = Number(parts[0]);
+      month = Number(parts[1]);
+      dateNum = Number(parts[2]);
+    } else if (parts[2].length === 4) {
+      year = Number(parts[2]);
+      month = Number(parts[1]);
+      dateNum = Number(parts[0]);
+    }
+  } else if (str.includes('/')) {
+    const parts = str.split('/');
+    if (parts[2].length === 4) {
+      year = Number(parts[2]);
+      const p0 = Number(parts[0]);
+      const p1 = Number(parts[1]);
+      if (p0 > 12) {
+        dateNum = p0;
+        month = p1;
+      } else {
+        month = p0;
+        dateNum = p1;
+      }
+    } else if (parts[0].length === 4) {
+      year = Number(parts[0]);
+      month = Number(parts[1]);
+      dateNum = Number(parts[2]);
+    }
+  }
+
+  if (isNaN(year) || isNaN(month) || isNaN(dateNum)) {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      year = d.getFullYear();
+      month = d.getMonth() + 1;
+      dateNum = d.getDate();
+    }
+  }
+
+  const ymd = (!isNaN(year) && !isNaN(month) && !isNaN(dateNum))
+    ? `${year}-${String(month).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`
+    : str;
+
+  return { year, month, dateNum, ymd };
 }
 
 // --- FETCH DATA ---
@@ -394,10 +471,11 @@ function getFilteredData(data) {
       return false;
     }
 
-    const tDate = new Date(t.date);
-    const year = tDate.getFullYear();
-    const month = tDate.getMonth() + 1;
-    const dateNum = tDate.getDate();
+    if (mode === 'all') return true;
+
+    const { year, month, dateNum, ymd } = normalizeDate(t.date);
+
+    if (isNaN(year) || isNaN(month)) return true;
 
     if (mode === 'month') {
       const ymVal = document.getElementById('picker-month')?.value;
@@ -413,7 +491,7 @@ function getFilteredData(data) {
       if (sub === 'w4') return dateNum >= 22;
       if (sub === 'custom_day') {
         const dayVal = document.getElementById('picker-specific-day')?.value;
-        return dayVal ? t.date === dayVal : true;
+        return dayVal ? ymd === dayVal : true;
       }
       return true;
 

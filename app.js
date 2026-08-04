@@ -17,6 +17,8 @@ if ('serviceWorker' in navigator) {
 let cachedTransactions = [];
 let isPitisHidden = true;
 let cachedSisaPitisFormatted = "Rp 0";
+let cachedPemasukanFormatted = "Rp 0";
+let cachedPengeluaranFormatted = "Rp 0";
 
 // --- THEME MANAGEMENT ---
 function initTheme() {
@@ -96,7 +98,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     arrow?.classList.toggle('rotate-180');
   });
 
-  // Accordion 3: Import CSV
+  // Accordion 3: Import CSV (Posisi Paling Bawah)
   document.getElementById('btn-toggle-import')?.addEventListener('click', () => {
     const content = document.getElementById('import-content');
     const arrow = document.getElementById('import-arrow');
@@ -104,8 +106,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     arrow?.classList.toggle('rotate-180');
   });
 
-  // Toggle Sensor Angka Pitis
-  document.getElementById('pitis-acc-content')?.addEventListener('click', () => {
+  // Toggle Sensor Angka Nominal (Sisa Pitis & Statistik)
+  document.getElementById('card-sisa-pitis')?.addEventListener('click', () => {
     isPitisHidden = !isPitisHidden;
     updatePitisDisplay();
   });
@@ -312,14 +314,23 @@ function updateCloudStatusUI() {
 
 function updatePitisDisplay() {
   const statSisaEl = document.getElementById('stat-sisa');
+  const statPemasukan = document.getElementById('stat-pemasukan');
+  const statPengeluaran = document.getElementById('stat-pengeluaran');
   const eyeIconEl = document.getElementById('pitis-eye-icon');
+  const eyeLabelEl = document.getElementById('pitis-eye-label');
 
   if (isPitisHidden) {
     if (statSisaEl) statSisaEl.innerText = "Rp •••••••";
+    if (statPemasukan) statPemasukan.innerText = "Rp •••••••";
+    if (statPengeluaran) statPengeluaran.innerText = "Rp •••••••";
     if (eyeIconEl) eyeIconEl.innerText = "👁️";
+    if (eyeLabelEl) eyeLabelEl.innerText = "Buka Sensor";
   } else {
     if (statSisaEl) statSisaEl.innerText = cachedSisaPitisFormatted;
+    if (statPemasukan) statPemasukan.innerText = cachedPemasukanFormatted;
+    if (statPengeluaran) statPengeluaran.innerText = cachedPengeluaranFormatted;
     if (eyeIconEl) eyeIconEl.innerText = "🙈";
+    if (eyeLabelEl) eyeLabelEl.innerText = "Tutup Sensor";
   }
 }
 
@@ -419,10 +430,9 @@ function renderFilteredList() {
     else totalKeluarPeriode += Number(t.amount);
   }
 
-  const statPemasukan = document.getElementById('stat-pemasukan');
-  const statPengeluaran = document.getElementById('stat-pengeluaran');
-  if (statPemasukan) statPemasukan.innerText = formatRp(totalMasukPeriode);
-  if (statPengeluaran) statPengeluaran.innerText = formatRp(totalKeluarPeriode);
+  cachedPemasukanFormatted = formatRp(totalMasukPeriode);
+  cachedPengeluaranFormatted = formatRp(totalKeluarPeriode);
+  updatePitisDisplay();
 
   // 3. RENDER RIWAYAT (DocumentFragment)
   const listContainer = document.getElementById('tx-list');

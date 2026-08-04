@@ -63,104 +63,91 @@
       </button>
     </div>
 
-    <!-- 1. ACCORDION: SISA PITIS -->
-    <section class="glass-card overflow-hidden">
-      <button type="button" id="btn-toggle-pitis-acc" class="w-full p-4 flex justify-between items-center font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-        <span class="flex items-center gap-2 text-sm">
+    <!-- 1. INFOCARD: SISA PITIS -->
+    <section id="card-sisa-pitis" class="glass-card p-4.5 cursor-pointer select-none hover:border-indigo-500/40 transition-colors">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
           <span>💰</span> Sisa Pitis
         </span>
-        <span id="pitis-acc-arrow" class="text-xs text-slate-400 transition-transform duration-200 transform">▼</span>
-      </button>
+        <button type="button" id="btn-toggle-eye" class="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700/60 transition-colors">
+          <span id="pitis-eye-icon">👁️</span>
+          <span class="text-[10px]" id="pitis-eye-label">Buka Sensor</span>
+        </button>
+      </div>
 
-      <div id="pitis-acc-content" class="hidden p-4 pt-1 border-t border-slate-200 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/40 text-center cursor-pointer">
-        <div class="py-3">
-          <p id="stat-sisa" class="text-2xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight font-mono">Rp •••••••</p>
-          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-center justify-center gap-1">
-            <span>(Tekan angka untuk sensor</span>
-            <span id="pitis-eye-icon">👁️</span>)
-          </p>
-        </div>
+      <div class="py-1">
+        <p id="stat-sisa" class="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight font-mono">Rp •••••••</p>
       </div>
     </section>
 
-    <!-- 2. ACCORDION: STATISTIK -->
-    <section class="glass-card overflow-hidden">
-      <button type="button" id="btn-toggle-summary" class="w-full p-4 flex justify-between items-center font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-        <span class="flex items-center gap-2 text-sm">
+    <!-- 2. INFOCARD: STATISTIK -->
+    <section class="glass-card p-4.5 space-y-3.5">
+      <div class="flex justify-between items-center">
+        <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2">
           <span>📊</span> Statistik
-        </span>
-        <span id="summary-arrow" class="text-xs text-slate-400 transition-transform duration-200 transform">▼</span>
-      </button>
+        </h2>
 
-      <div id="summary-content" class="hidden p-4 pt-2 border-t border-slate-200 dark:border-slate-800/60 space-y-3 bg-slate-50/50 dark:bg-slate-900/40">
-        
-        <!-- Filter Controls -->
-        <div class="space-y-2.5 pt-1">
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Periode Tampilan:</span>
-            <select id="filter-type" class="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 p-1.5 rounded-lg font-semibold focus:outline-none focus:border-indigo-500">
-              <option value="month" selected>Per Bulan</option>
-              <option value="quarter">Per Kuartal (Q1 - Q4)</option>
-              <option value="semester">Per Semester (6 Bulan)</option>
-              <option value="year">Per Tahun</option>
-              <option value="all">Semua Periode (Full History)</option>
-            </select>
-          </div>
+        <!-- Periode Filter Dropdown -->
+        <select id="filter-type" class="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 p-1.5 rounded-lg font-semibold focus:outline-none focus:border-indigo-500">
+          <option value="month" selected>Per Bulan</option>
+          <option value="quarter">Per Kuartal (Q1 - Q4)</option>
+          <option value="semester">Per Semester (6 Bulan)</option>
+          <option value="year">Per Tahun</option>
+          <option value="all">Semua Periode (Full History)</option>
+        </select>
+      </div>
 
-          <!-- Dynamic Controls -->
-          <div id="ctrl-month" class="flex flex-wrap gap-2 items-center justify-between">
-            <input type="month" id="picker-month" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold focus:outline-none focus:border-indigo-500">
-            <select id="picker-submonth" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1 focus:outline-none focus:border-indigo-500">
-              <option value="all" selected>Full 1 Bulan Ini</option>
-              <option value="w1">Minggu 1 (Tgl 1-7)</option>
-              <option value="w2">Minggu 2 (Tgl 8-14)</option>
-              <option value="w3">Minggu 3 (Tgl 15-21)</option>
-              <option value="w4">Minggu 4 (Tgl 22-End)</option>
-              <option value="custom_day">Tanggal Spesifik...</option>
-            </select>
-            <input type="date" id="picker-specific-day" class="hidden text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold w-full focus:outline-none focus:border-indigo-500">
-          </div>
+      <!-- Dynamic Controls -->
+      <div id="ctrl-month" class="flex flex-wrap gap-2 items-center justify-between pt-0.5">
+        <input type="month" id="picker-month" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold focus:outline-none focus:border-indigo-500">
+        <select id="picker-submonth" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1 focus:outline-none focus:border-indigo-500">
+          <option value="all" selected>Full 1 Bulan Ini</option>
+          <option value="w1">Minggu 1 (Tgl 1-7)</option>
+          <option value="w2">Minggu 2 (Tgl 8-14)</option>
+          <option value="w3">Minggu 3 (Tgl 15-21)</option>
+          <option value="w4">Minggu 4 (Tgl 22-End)</option>
+          <option value="custom_day">Tanggal Spesifik...</option>
+        </select>
+        <input type="date" id="picker-specific-day" class="hidden text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold w-full focus:outline-none focus:border-indigo-500">
+      </div>
 
-          <div id="ctrl-quarter" class="hidden flex gap-2 items-center justify-between">
-            <select id="picker-quarter-year" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1"></select>
-            <select id="picker-quarter-q" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1">
-              <option value="q1">Kuartal 1 (Jan - Mar)</option>
-              <option value="q2">Kuartal 2 (Apr - Jun)</option>
-              <option value="q3">Kuartal 3 (Jul - Sep)</option>
-              <option value="q4">Kuartal 4 (Okt - Des)</option>
-            </select>
-          </div>
+      <div id="ctrl-quarter" class="hidden flex gap-2 items-center justify-between">
+        <select id="picker-quarter-year" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1"></select>
+        <select id="picker-quarter-q" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1">
+          <option value="q1">Kuartal 1 (Jan - Mar)</option>
+          <option value="q2">Kuartal 2 (Apr - Jun)</option>
+          <option value="q3">Kuartal 3 (Jul - Sep)</option>
+          <option value="q4">Kuartal 4 (Okt - Des)</option>
+        </select>
+      </div>
 
-          <div id="ctrl-semester" class="hidden flex gap-2 items-center justify-between">
-            <select id="picker-semester-year" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1"></select>
-            <select id="picker-semester-s" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1">
-              <option value="s1">Semester 1 (Jan - Jun)</option>
-              <option value="s2">Semester 2 (Jul - Des)</option>
-            </select>
-          </div>
+      <div id="ctrl-semester" class="hidden flex gap-2 items-center justify-between">
+        <select id="picker-semester-year" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1"></select>
+        <select id="picker-semester-s" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1">
+          <option value="s1">Semester 1 (Jan - Jun)</option>
+          <option value="s2">Semester 2 (Jul - Des)</option>
+        </select>
+      </div>
 
-          <div id="ctrl-year" class="hidden flex gap-2 items-center justify-between">
-            <label class="text-xs font-medium text-slate-500 dark:text-slate-400">Tahun:</label>
-            <select id="picker-year-only" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1"></select>
-          </div>
+      <div id="ctrl-year" class="hidden flex gap-2 items-center justify-between">
+        <label class="text-xs font-medium text-slate-500 dark:text-slate-400">Tahun:</label>
+        <select id="picker-year-only" class="text-xs p-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-semibold flex-1"></select>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-2 gap-2 text-center pt-1">
+        <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/40">
+          <span class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold block flex items-center justify-center gap-1">
+            <span>📈</span> Pemasukan
+          </span>
+          <p id="stat-pemasukan" class="text-sm sm:text-base font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">Rp •••••••</p>
         </div>
-
-        <!-- Stat Cards -->
-        <div class="grid grid-cols-2 gap-2 text-center pt-2">
-          <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/40">
-            <span class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold block flex items-center justify-center gap-1">
-              <span>📈</span> Pemasukan
-            </span>
-            <p id="stat-pemasukan" class="text-sm sm:text-base font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">Rp 0</p>
-          </div>
-          <div class="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-xl border border-rose-200 dark:border-rose-800/40">
-            <span class="text-xs text-rose-600 dark:text-rose-400 font-semibold block flex items-center justify-center gap-1">
-              <span>📉</span> Pengeluaran
-            </span>
-            <p id="stat-pengeluaran" class="text-sm sm:text-base font-bold font-mono text-rose-600 dark:text-rose-400 mt-1">Rp 0</p>
-          </div>
+        <div class="bg-rose-50 dark:bg-rose-950/40 p-3 rounded-xl border border-rose-200 dark:border-rose-800/40">
+          <span class="text-xs text-rose-600 dark:text-rose-400 font-semibold block flex items-center justify-center gap-1">
+            <span>📉</span> Pengeluaran
+          </span>
+          <p id="stat-pengeluaran" class="text-sm sm:text-base font-bold font-mono text-rose-600 dark:text-rose-400 mt-1">Rp •••••••</p>
         </div>
-
       </div>
     </section>
 

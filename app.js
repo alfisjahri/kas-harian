@@ -316,21 +316,21 @@ function updatePitisDisplay() {
   const statSisaEl = document.getElementById('stat-sisa');
   const statPemasukan = document.getElementById('stat-pemasukan');
   const statPengeluaran = document.getElementById('stat-pengeluaran');
-  const eyeIconEl = document.getElementById('pitis-eye-icon');
-  const eyeLabelEl = document.getElementById('pitis-eye-label');
+  const svgOpen = document.getElementById('eye-svg-open');
+  const svgClosed = document.getElementById('eye-svg-closed');
 
   if (isPitisHidden) {
     if (statSisaEl) statSisaEl.innerText = "Rp •••••••";
     if (statPemasukan) statPemasukan.innerText = "Rp •••••••";
     if (statPengeluaran) statPengeluaran.innerText = "Rp •••••••";
-    if (eyeIconEl) eyeIconEl.innerText = "👁️";
-    if (eyeLabelEl) eyeLabelEl.innerText = "Buka Sensor";
+    svgOpen?.classList.add('hidden');
+    svgClosed?.classList.remove('hidden');
   } else {
     if (statSisaEl) statSisaEl.innerText = cachedSisaPitisFormatted;
     if (statPemasukan) statPemasukan.innerText = cachedPemasukanFormatted;
     if (statPengeluaran) statPengeluaran.innerText = cachedPengeluaranFormatted;
-    if (eyeIconEl) eyeIconEl.innerText = "🙈";
-    if (eyeLabelEl) eyeLabelEl.innerText = "Tutup Sensor";
+    svgOpen?.classList.remove('hidden');
+    svgClosed?.classList.add('hidden');
   }
 }
 

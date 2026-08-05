@@ -138,7 +138,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
 
   ['picker-month', 'picker-specific-day', 'picker-quarter-year', 'picker-quarter-q', 
-   'picker-semester-year', 'picker-semester-s', 'picker-year-only'].forEach(id => {
+   'picker-semester-year', 'picker-semester-s', 'picker-year-only', 'sort-order'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', renderFilteredList);
   });
 
@@ -472,8 +472,9 @@ function renderFilteredList() {
 function getFilteredData(data) {
   const mode = document.getElementById('filter-type')?.value || 'month';
   const searchQuery = (document.getElementById('search-tx')?.value || '').toLowerCase();
+  const sortOrder = document.getElementById('sort-order')?.value || 'newest';
 
-  return data.filter(t => {
+  const filtered = data.filter(t => {
     if (searchQuery && !t.description.toLowerCase().includes(searchQuery)) {
       return false;
     }
@@ -527,6 +528,26 @@ function getFilteredData(data) {
 
     return true;
   });
+
+  // Sortasi berdasar Tanggal & ID (Terbaru ke Terlama secara default)
+  filtered.sort((a, b) => {
+    const ymdA = normalizeDate(a.date).ymd || String(a.date);
+    const ymdB = normalizeDate(b.date).ymd || String(b.date);
+
+    if (ymdA !== ymdB) {
+      return sortOrder === 'newest'
+        ? ymdB.localeCompare(ymdA)
+        : ymdA.localeCompare(ymdB);
+    }
+
+    const idA = String(a.id || '');
+    const idB = String(b.id || '');
+    return sortOrder === 'newest'
+      ? idB.localeCompare(idA)
+      : idA.localeCompare(idB);
+  });
+
+  return filtered;
 }
 
 // --- IMPORT CSV ---

@@ -200,8 +200,12 @@
         </button>
       </div>
 
-      <div>
-        <input type="text" id="search-tx" placeholder="Cari transaksi..." class="input-field">
+      <div class="flex gap-2 items-center">
+        <input type="text" id="search-tx" placeholder="Cari transaksi..." class="input-field flex-1">
+        <select id="sort-order" class="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 p-2 rounded-xl font-semibold focus:outline-none focus:border-indigo-500 cursor-pointer whitespace-nowrap">
+          <option value="newest" selected>Terbaru</option>
+          <option value="oldest">Terlama</option>
+        </select>
       </div>
 
       <div id="tx-list" class="space-y-2"></div>

@@ -21,16 +21,16 @@
 @layer components {
   /* Glassmorphism / Modern Card Utility */
   .glass-card {
-    @apply bg-white dark:bg-slate-900/75 backdrop-blur-md border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-lg shadow-slate-200/50 dark:shadow-xl dark:shadow-black/20 transition-colors duration-200;
+    @apply bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-xl shadow-slate-200/40 dark:shadow-2xl dark:shadow-black/40 transition-colors duration-200;
   }
 
   .glass-card-sm {
-    @apply bg-white/80 dark:bg-slate-900/60 backdrop-blur-sm border border-slate-200/80 dark:border-slate-800/60 rounded-xl transition-colors duration-200;
+    @apply bg-white/80 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/60 rounded-xl transition-colors duration-200;
   }
 
   /* Form input styles */
   .input-field {
-    @apply w-full p-2.5 bg-slate-50 dark:bg-slate-950/70 border border-slate-300 dark:border-slate-800 rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-150;
+    @apply w-full p-2.5 bg-slate-50 dark:bg-slate-950/70 border border-slate-300 dark:border-slate-800 rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-150;
   }
 
   .btn-primary {
@@ -38,7 +38,7 @@
   }
 
   .btn-secondary {
-    @apply bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700/60 transition-all duration-150 inline-flex items-center justify-center gap-1.5;
+    @apply bg-slate-200/80 dark:bg-slate-800/80 hover:bg-slate-300 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-300/80 dark:border-slate-700/60 transition-all duration-150 inline-flex items-center justify-center gap-1.5;
   }
 
   .btn-danger {
@@ -46,8 +46,26 @@
   }
 
   .btn-theme {
-    @apply p-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700/80 text-xs font-semibold transition-all duration-150 active:scale-95 inline-flex items-center justify-center;
+    @apply p-2 rounded-xl bg-slate-200/80 dark:bg-slate-800/80 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300/80 dark:border-slate-700/80 text-xs font-semibold transition-all duration-150 active:scale-95 inline-flex items-center justify-center;
   }
+
+  .quick-amt-btn {
+    @apply py-1.5 px-2 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50 rounded-lg text-xs font-bold font-mono transition-all active:scale-95;
+  }
+
+  .category-pill {
+    @apply cursor-pointer px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all duration-150 flex items-center gap-1.5 select-none;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Custom scrollbars */

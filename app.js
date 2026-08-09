@@ -672,10 +672,17 @@ function renderFilteredList() {
     }
   }
 
-  // 6. RENDER RECENT 3 TRANSACTIONS (TAB 1 CATAT)
+  // 6. RENDER RECENT 3 TRANSACTIONS (TAB 1 CATAT) - Strictly 3 Newest Transactions
   const recentContainer = document.getElementById('tx-recent-list');
   if (recentContainer) {
-    const recentTx = transactions.slice(0, 3);
+    const sortedNewest = [...transactions].sort((a, b) => {
+      const ymdA = normalizeDate(a.date).ymd || String(a.date);
+      const ymdB = normalizeDate(b.date).ymd || String(b.date);
+      if (ymdA !== ymdB) return ymdB.localeCompare(ymdA);
+      return String(b.id || '').localeCompare(String(a.id || ''));
+    });
+    const recentTx = sortedNewest.slice(0, 3);
+
     if (recentTx.length === 0) {
       recentContainer.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-3">Belum ada transaksi recorded.</p>`;
     } else {

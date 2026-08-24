@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pitis-v2.1';
+const CACHE_NAME = 'pitis-v2.2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -23,9 +23,18 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Biarkan request non-GET dan request API Supabase berjalan langsung tanpa intercept
+  // Biarkan request non-GET dan request API external (Supabase / Google Apps Script) berjalan langsung tanpa intercept
   if (event.request.method !== 'GET') return;
-  if (event.request.url.includes('supabase.co')) return;
+
+  const url = event.request.url;
+  if (
+    url.includes('supabase.co') ||
+    url.includes('script.google.com') ||
+    url.includes('googleusercontent.com') ||
+    url.includes('googleapis.com')
+  ) {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {

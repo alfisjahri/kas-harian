@@ -86,7 +86,14 @@ export async function fetchTransactions() {
       const res = await fetch(url, { redirect: 'follow' });
       const json = await res.json();
       if (json.status === 'success' && Array.isArray(json.data)) {
-        return json.data;
+        const rawData = json.data;
+        const seenIds = new Set();
+        return rawData.filter(item => {
+          const key = String(item.id);
+          if (seenIds.has(key)) return false;
+          seenIds.add(key);
+          return true;
+        });
       }
     } catch (err) {
       console.error("Gagal membaca dari Google Sheets (GAS):", err);

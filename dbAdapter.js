@@ -4,12 +4,12 @@ const CONFIG_KEY = 'pitis_cloud_config';
 const LOCAL_TX_KEY = 'pitis_local_transactions';
 
 export const CATEGORIES = {
-  makanan: { name: 'Makanan & Minuman', icon: '🍽️', color: 'emerald', bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+  makanan: { name: 'Makanan & Minuman', icon: '🍔', color: 'emerald', bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
   transportasi: { name: 'Transportasi', icon: '🚗', color: 'blue', bg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
   tagihan: { name: 'Tagihan & Pulsa', icon: '⚡', color: 'amber', bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
   belanja: { name: 'Belanja', icon: '🛍️', color: 'purple', bg: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' },
-  hiburan: { name: 'Hiburan', icon: '🎬', color: 'pink', bg: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20' },
-  kesehatan: { name: 'Kesehatan', icon: '💊', color: 'red', bg: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20' },
+  hiburan: { name: 'Hiburan', icon: '🎮', color: 'pink', bg: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20' },
+  kesehatan: { name: 'Kesehatan', icon: '🏥', color: 'red', bg: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20' },
   gaji: { name: 'Gaji & Pendapatan', icon: '💰', color: 'teal', bg: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20' },
   investasi: { name: 'Investasi & Tabungan', icon: '📈', color: 'indigo', bg: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20' },
   lainnya: { name: 'Lain-lain', icon: '📦', color: 'slate', bg: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' }
@@ -26,12 +26,6 @@ const defaultDummyData = [
 let supabaseClientInstance = null;
 let currentSupabaseConfigKey = '';
 
-// Helper sanitize URL GAS
-function cleanGasUrl(url) {
-  if (!url) return '';
-  return url.trim().replace(/\?.*$/, '').replace(/\/+$/, '');
-}
-
 // --- CONFIG MANAGEMENT ---
 export function getCloudConfig() {
   try {
@@ -44,9 +38,6 @@ export function getCloudConfig() {
 }
 
 export function saveCloudConfig(config) {
-  if (config && config.gasUrl) {
-    config.gasUrl = cleanGasUrl(config.gasUrl);
-  }
   localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
   // Reset cache Supabase
   supabaseClientInstance = null;
@@ -54,7 +45,7 @@ export function saveCloudConfig(config) {
 }
 
 function getSupabaseClient(config) {
-  const key = ${config.supabaseUrl}_;
+  const key = `${config.supabaseUrl}_${config.supabaseAnonKey}`;
   if (supabaseClientInstance && currentSupabaseConfigKey === key) {
     return supabaseClientInstance;
   }
@@ -91,19 +82,15 @@ export async function fetchTransactions() {
 
   if (config.provider === 'gas' && config.gasUrl) {
     try {
-      const gasEndpoint = cleanGasUrl(config.gasUrl);
-      const url = ${gasEndpoint}?action=get&t=;
+      const url = `${config.gasUrl}?action=get&t=${Date.now()}`;
       const res = await fetch(url, { redirect: 'follow' });
       const json = await res.json();
       if (json.status === 'success' && Array.isArray(json.data)) {
         return json.data;
       }
-      if (json.status === 'error') {
-        throw new Error(json.message || "Error dari Google Apps Script.");
-      }
     } catch (err) {
       console.error("Gagal membaca dari Google Sheets (GAS):", err);
-      throw new Error(err.message || "Gagal terhubung ke Google Sheets. Periksa URL GAS WebApp kamu!");
+      throw new Error("Gagal terhubung ke Google Sheets. Periksa URL GAS WebApp kamu!");
     }
   }
 
@@ -117,7 +104,7 @@ export async function fetchTransactions() {
 
       if (error) {
         console.error("Supabase fetch error:", error);
-        throw new Error(Supabase Error: );
+        throw new Error(`Supabase Error: ${error.message}`);
       }
       return data || [];
     }
@@ -138,8 +125,7 @@ export async function addTransaction(txData) {
   };
 
   if (config.provider === 'gas' && config.gasUrl) {
-    const gasEndpoint = cleanGasUrl(config.gasUrl);
-    const res = await fetch(gasEndpoint, {
+    const res = await fetch(config.gasUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'add', data: newTx })
@@ -159,7 +145,7 @@ export async function addTransaction(txData) {
         .insert([{ date: newTx.date, type: newTx.type, category: newTx.category, amount: newTx.amount, description: newTx.description }])
         .select();
 
-      if (error) throw new Error(Supabase Insert Error: );
+      if (error) throw new Error(`Supabase Insert Error: ${error.message}`);
       return data?.[0] || newTx;
     }
   }
@@ -184,11 +170,10 @@ export async function batchAddTransactions(txList) {
   }));
 
   if (config.provider === 'gas' && config.gasUrl) {
-    const gasEndpoint = cleanGasUrl(config.gasUrl);
     let isBatchSuccess = false;
 
     try {
-      const res = await fetch(gasEndpoint, {
+      const res = await fetch(config.gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'batch_add', data: formattedList })
@@ -204,14 +189,14 @@ export async function batchAddTransactions(txList) {
 
     if (!isBatchSuccess) {
       for (let i = 0; i < formattedList.length; i++) {
-        const res = await fetch(gasEndpoint, {
+        const res = await fetch(config.gasUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'add', data: formattedList[i] })
         });
         const json = await res.json();
         if (json && json.status !== 'success') {
-          throw new Error(json.message || Gagal mengimpor transaksi ke- ke Google Sheets.);
+          throw new Error(json.message || `Gagal mengimpor transaksi ke-${i + 1} ke Google Sheets.`);
         }
       }
       return formattedList;
@@ -229,7 +214,7 @@ export async function batchAddTransactions(txList) {
         description: t.description
       }));
       const { error } = await client.from('transactions').insert(recordsToInsert);
-      if (error) throw new Error(Supabase Batch Insert Error: );
+      if (error) throw new Error(`Supabase Batch Insert Error: ${error.message}`);
       return formattedList;
     }
   }
@@ -253,8 +238,7 @@ export async function updateTransaction(id, txData) {
   };
 
   if (config.provider === 'gas' && config.gasUrl) {
-    const gasEndpoint = cleanGasUrl(config.gasUrl);
-    const res = await fetch(gasEndpoint, {
+    const res = await fetch(config.gasUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'update', data: updatedTx })
@@ -274,7 +258,7 @@ export async function updateTransaction(id, txData) {
         .update({ date: updatedTx.date, type: updatedTx.type, category: updatedTx.category, amount: updatedTx.amount, description: updatedTx.description })
         .eq('id', id);
 
-      if (error) throw new Error(Supabase Update Error: );
+      if (error) throw new Error(`Supabase Update Error: ${error.message}`);
       return updatedTx;
     }
   }
@@ -292,8 +276,7 @@ export async function deleteTransaction(id) {
   const config = getCloudConfig();
 
   if (config.provider === 'gas' && config.gasUrl) {
-    const gasEndpoint = cleanGasUrl(config.gasUrl);
-    const res = await fetch(gasEndpoint, {
+    const res = await fetch(config.gasUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'delete', id: String(id) })
@@ -313,7 +296,7 @@ export async function deleteTransaction(id) {
         .delete()
         .eq('id', id);
 
-      if (error) throw new Error(Supabase Delete Error: );
+      if (error) throw new Error(`Supabase Delete Error: ${error.message}`);
       return true;
     }
   }

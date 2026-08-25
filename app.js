@@ -611,8 +611,11 @@ function renderFilteredList() {
 
   for (let i = 0; i < transactions.length; i++) {
     const t = transactions[i];
-    if (t.type === 'pemasukan') globalMasuk += Number(t.amount);
-    else globalKeluar += Number(t.amount);
+    const amt = Math.abs(Number(t.amount) || 0);
+    const typeStr = String(t.type || '').toLowerCase().trim();
+    const isIncome = typeStr.includes('pemasukan') || typeStr.includes('masuk') || typeStr === 'in' || typeStr === '+';
+    if (isIncome) globalMasuk += amt;
+    else globalKeluar += amt;
   }
 
   const totalSisaKasGlobal = globalMasuk - globalKeluar;
@@ -632,7 +635,9 @@ function renderFilteredList() {
     const amt = Number(t.amount);
     if (t.date) uniqueDates.add(t.date);
 
-    if (t.type === 'pemasukan') {
+    const typeStr = String(t.type || '').toLowerCase().trim();
+    const isIncome = typeStr.includes('pemasukan') || typeStr.includes('masuk') || typeStr === 'in' || typeStr === '+';
+    if (isIncome) {
       totalMasukPeriode += amt;
     } else {
       totalKeluarPeriode += amt;
@@ -696,7 +701,7 @@ function renderFilteredList() {
 }
 
 function createTxCard(t) {
-  const isIncome = t.type === 'pemasukan';
+  const typeStr = String(t.type || '').toLowerCase().trim(); const isIncome = typeStr.includes('pemasukan') || typeStr.includes('masuk') || typeStr === 'in' || typeStr === '+';
   const catInfo = CATEGORIES[t.category] || CATEGORIES.lainnya;
 
   const card = document.createElement('div');

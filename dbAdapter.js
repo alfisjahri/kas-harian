@@ -87,13 +87,20 @@ export async function fetchTransactions() {
       const json = await res.json();
       if (json.status === 'success' && Array.isArray(json.data)) {
         const rawData = json.data;
-        const seenIds = new Set();
-        return rawData.filter(item => {
-          const key = String(item.id);
-          if (seenIds.has(key)) return false;
-          seenIds.add(key);
-          return true;
-        });
+        const seen = new Set();
+        const uniqueList = [];
+        for (let i = 0; i < rawData.length; i++) {
+          const item = rawData[i];
+          const rawId = item.id ? String(item.id).trim() : '';
+          const key = (rawId && !rawId.startsWith('tx_'))
+            ? 'id_' + rawId
+            : (item.date + '_' + item.type + '_' + item.amount + '_' + item.description);
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniqueList.push(item);
+          }
+        }
+        return uniqueList;
       }
     } catch (err) {
       console.error("Gagal membaca dari Google Sheets (GAS):", err);
